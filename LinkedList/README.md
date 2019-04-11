@@ -1,2 +1,6 @@
-# leetcode-practice
-notes for leetcode
+# LinkedList
+notes for LinkedList
+
+1 链表节点必须要初始化！！！
+2 如果是原地调整链表的顺序或者新创建了链表 最后的节点一定要指向NULL 否则会有环……
+3 链表的头节点问题 设置节点p，p作为头节点（没有实际意义），结束后返回p->next即可

@@ -1,2 +1,4 @@
-# leetcode-practice
-notes for leetcode
+# Greedy
+
+# 921 最少添加的括号数量
+思路：用栈 最后记录栈的长度;也可以不用栈，用left和right分别记录左右括号的数量，最后相加

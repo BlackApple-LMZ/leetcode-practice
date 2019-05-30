@@ -15,7 +15,10 @@ int begin(0), end(nums.size()-1);
             else
                 end = mid-1;
         }
-        
+**33 旋转数组找数据 很经典mark！！！！
+
+思路：在常规二分的基础上，加上一点条件判断，针对begin、mid、end对应的数的大小，判断应该查找的区间；
+
 **34 升序重复数组 找target出现范围 递归解决 one pass 
 
 思路：循环二分搜索，每次查找到数的时候更新minl和maxr，并继续查找；solution是分两次查找，第一次查找left，第二次查找right，这个想法很妙，比我的思路好；

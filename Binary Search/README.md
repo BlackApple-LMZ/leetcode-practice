@@ -6,7 +6,7 @@
 
 **递归与循环两种方式：35作为demo 三分搜索：374**
 
-'''
+```
 int begin(0), end(nums.size()-1);
 while(begin<=end){
     int mid = (begin+end)/2;
@@ -17,7 +17,7 @@ while(begin<=end){
     else
         end = mid-1;
 }
-'''
+```
         
 ### 33 旋转数组找数据 很经典mark！！！！**
 

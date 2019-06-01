@@ -1,11 +1,10 @@
 # Binary Search
-notes for Binary Search: 162\209
 
-针对已排好序的数组；注意int mid = (begin+end)/2;与int mid = begin+(end-begin)/2; 很可能有坑
+**notes for Binary Search: 162\209**
+**针对已排好序的数组；注意int mid = (begin+end)/2;与int mid = begin+(end-begin)/2; 很可能有坑**
+**递归与循环两种方式：35作为demo 三分搜索：374**
 
-递归与循环两种方式：35作为demo 三分搜索：374
-
-int begin(0), end(nums.size()-1);
+'''int begin(0), end(nums.size()-1);
         while(begin<=end){
             int mid = (begin+end)/2;
             if(target == nums[mid])
@@ -14,8 +13,9 @@ int begin(0), end(nums.size()-1);
                 begin = mid+1;
             else
                 end = mid-1;
-        }
-**33 旋转数组找数据 很经典mark！！！！
+        }'''
+        
+### 33 旋转数组找数据 很经典mark！！！！**
 
 思路：在常规二分的基础上，加上一点条件判断，针对begin、mid、end对应的数的大小，判断应该查找的区间；
 

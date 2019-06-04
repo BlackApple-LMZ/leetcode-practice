@@ -1,5 +1,17 @@
 # HashTable
 
+### 36 验证数独的有效性 **
+
+思路：用unordered_map<char, vector<int>>，对每行，每列，以及每块分别设置哈希函数，遍历一次输入数组与hashmap求最后结果；discuss直接用三个数组更简单啊……
+
+### 37 解数独 ***
+
+思路：在36基础上用回溯的思想求解，为了简单，开始把待求的i，j压入到queue里面，然后每次取头部进行递归，第一次卡在了引用上面，然后第二次过了，时间很慢很慢……60ms；**discuss 取消queue 直接传递i，j 快了很多 4ms 能不用stl就不用；**
+
+### 49 Anagrams进行分组 **
+
+思路：对string排序后的结果作为key，vector作为val，时间复杂度O（NKlogK）；思路2是26长度的vector向量表示str，作为key；
+
 ### 136 找数组中单独出现的数，当时面试问到的题目！！！！！ *
 
 思路：用哈希表可以实现On 但是用为操作 异或可以更快 相同的数异或为0，0和其他数异或为1;
@@ -19,6 +31,18 @@ Explanation: 后面的2表示平方 12 + 92 = 82 82 + 22 = 68 62 + 82 = 100 12 +
 ### 290 单词模式 pattern = "abba", str = "dog cat cat dog" true *
 
 思路：就用map，需要考虑pattern与str提取word的数量是否一致，考虑是否一一对应，并且char没有被重复使用；discuss有大佬用istringstream处理带空格的输入流，这种写法很妙，必须mark！！！！然后就是和上述描述一样的判断；
+
+### 299 bull和cow的游戏 猜数字，大小对位置对就是bull，大小其余地方有，但是位置不对是cow，返回bull和cow的数量；两个vector替代map的方法mark！**
+
+思路：第一次记录没对上的数字，第二次进行查找，第一次提交错误，忽略了"1122" "1222" 这种情况；discuss1用和我一样的two pass，但是用**两个vector替代map**，可以节约查找的时间妙啊！！！！discuss2用两个map，其实也可以用vector，但是用的one pass的方法，也很妙
+
+### 387 string中第一个单独的char对应的index *
+
+思路：第一次遍历记录table，第二次查找值为1的情况；
+
+### 389 和136一样，只不过两个string，一个多了一个char *
+
+思路：第一次遍历记录s，第二次遍历t，查找多出来的char；
 
 ### 409 *
 ### 438 * fail slide window

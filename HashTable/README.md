@@ -1,4 +1,22 @@
 # HashTable
+note: 对于O(n^2)的暴搜算法，考虑用滑窗来优化时间:
+```
+int lengthOfLongestSubstring(string s) {
+    int used[128] = {-1};
+    int start(-1);
+    int length(0);
+    for(int i=0; i<s.size(); i++){
+        if(used[s[i]]>start){
+            start = used[s[i]];
+        }
+        length = max(length, i-start);
+        used[s[i]] = i;
+    }
+    return length;
+}
+```
+### 3 不重复字符的最长子串 必须再刷！！！**
+思路：第一次暴搜过，但是很慢很慢；solution用滑窗法，但是自己写还是没有写对，必须mark！！！！！！
 
 ### 36 验证数独的有效性 **
 思路：用unordered_map<char, vector<int>>，对每行，每列，以及每块分别设置哈希函数，遍历一次输入数组与hashmap求最后结果；discuss直接用三个数组更简单啊……
@@ -13,7 +31,6 @@
 思路：用哈希表可以实现On 但是用为操作 异或可以更快 相同的数异或为0，0和其他数异或为1;
 
 ### 202 高兴数 *
-
 Explanation: 后面的2表示平方 12 + 92 = 82 82 + 22 = 68 62 + 82 = 100 12 + 02 + 02 = 1
 
 思路：用哈希表存下出现过的数，一旦重复就false;方法二是快慢指针，一旦快追上慢，就false;平方和最后肯定会小于10，只有1和7才会true！！！妙啊
@@ -21,8 +38,8 @@ Explanation: 后面的2表示平方 12 + 92 = 82 82 + 22 = 68 62 + 82 = 100 12 +
 ### 204 *
 ### 205 *
 ### 217 *
-### 219 *
-### 220 ** fail
+### 219 见滑窗法*
+### 220 见滑窗法** fail
 ### 242 *
 ### 290 单词模式 pattern = "abba", str = "dog cat cat dog" true *
 思路：就用map，需要考虑pattern与str提取word的数量是否一致，考虑是否一一对应，并且char没有被重复使用；discuss有大佬用istringstream处理带空格的输入流，这种写法很妙，必须mark！！！！然后就是和上述描述一样的判断；
@@ -36,7 +53,9 @@ Explanation: 后面的2表示平方 12 + 92 = 82 82 + 22 = 68 62 + 82 = 100 12 +
 ### 389 和136一样，只不过两个string，一个多了一个char *
 思路：第一次遍历记录s，第二次遍历t，查找多出来的char；
 
-### 409 *
+### 409 由给定的char构建最长的回文string的长度*
+思路：hashmap统计char，偶数加，奇数只加一个；
+
 ### 438 * fail slide window
 
 ### 463 岛屿(1连接成的区域)周长 *

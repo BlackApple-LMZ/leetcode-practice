@@ -256,6 +256,9 @@ Input: [3,1,3,4,2] Output: 3
 ### 238 数组除了自己其他元素的乘积 **
 思路：第一次遍历把所有数组元素都相乘，第二次除去自己，考虑一些0的情况；
 
+### 289 生命游戏 **
+思路：0,1表示的二维数组，0表示died，1表示live，有四个rule改变0,1的状态；要求原地改变。和661思路差不多，因为0,1只用了一位，所以用另一位表示新的状态，最后右移来更新
+
 ### 414 第三大的数 * 
 ```
 Input: [3, 2, 1] Output: 1
@@ -274,6 +277,14 @@ Input:[4,3,2,7,8,2,3,1] Output:[2,3]
 Input:[4,3,2,7,8,2,3,1] Output:[5,6]
 ```
 
+### 457 循环数组 ** 很迷的题…
+题目：循环数组，数组每个数表示可以前进或者后退的步数，判断从数组任意位置开始，是否存在回到起始点的环，要求环的移动方向一致，并且必须至少两个数；
+```
+Input: [2,-1,1,2,2] Output: true Explanation: There is a cycle, from index 0 -> 2 -> 3 -> 0. The cycle's length is 3.
+Input: [-1,2] Output: false Explanation: The movement from index 1 -> 1 -> 1 ... is not a cycle, because the cycle's length is 1. By definition the cycle's length must be greater than 1.
+```
+思路：分前后两次循环检测，每次检测都用快慢指针，如果重合表示有环，检测的过程中考虑题目的那些坑条件…
+
 ### 485 最长连续1的数量 * 一般
 ```
 Input: [1,1,0,1,1,1] Output: 3
@@ -288,8 +299,67 @@ Input: [1,2], 2 Output: 3
 ```
 思路：total += min(timeSeries[i+1]-timeSeries[i], duration); 取两次的间隔时间与duration的最小值，妙啊！
 
+### 532 给一个数组，找出 两个数差为k的 对数，不含重复的对数 * 还行
+```
+Input: [3, 1, 4, 1, 5], k = 2 Output: 2
+Input:[1, 2, 3, 4, 5], k = 1 Output: 4
+Input: [1, 3, 1, 5, 4], k = 0 Output: 1
+```
+思路：排序，然后遍历；直接用哈希表记录数据出现的次数，然后遍历哈希表，对k等于0的情况和不等于0的情况分别进行判断计数；
+
+### 560 求数组连续子数组和为k的个数 ** 必须二刷solution 好题啊
+```
+Input:nums = [1,1,1], k = 2 Output: 2
+int subarraySum(vector<int>& nums, int k) {
+    int count = 0, sum(0);
+    unordered_map<int, int> hash;
+    hash[0] = 1;
+    for (int start = 0; start < nums.size(); start++) {
+        sum += nums[start];
+        count += hash[sum-k];
+        hash[sum]++;
+    }
+    return count;
+}
+```
+思路：就O(n^2)的思路，用sum数组缓存一下；solution更牛逼的思路：有点类似525的思路，用哈希表记录sum的次数，如果累加和与之前的和相差k，就加上之前的数据，代码很简单，但是很妙！！！；
+
+### 561 2n长度的数组分成n个组，使得每个组的最小值的和最大，返回最大值 *
+```
+Input: [1,4,3,2] Output: 4
+Explanation: n is 2, and the maximum sum of pairs is 4 = min(1, 2) + min(3, 4).
+```
+思路：sort排序，然后返回奇数位置数据的和；用桶排序可以提高到O(n)
+
+### 566 改变矩阵的形状 * 没啥新意
+思路：就是reshape的功能，用一维数组表示；res[i / c][i % c] = nums[i / n][i % n];
+
+### 605 种花 *
+题目：一维数组，0表示空，1表示有花，相邻的盆子不能连续种花，问知否能种下n株花
+```
+Input: flowerbed = [1,0,0,0,1], n = 1 Output: True
+Input: flowerbed = [1,0,0,0,1], n = 2 Output: False
+if (flowerbed[i] == 0 && (i == 0 || flowerbed[i - 1] == 0) && (i == flowerbed.size() - 1 || flowerbed[i + 1] == 0))
+```
+思路：挺简单的，就要考虑首尾的情况；
+
 ### 661 图像平滑 *
 思路：就是该点的像素值由周围取平均，因为图像像素是8位，一个int是16位以上，所以可以用8-16位来临时存储数据，节省内存，妙啊！！！！
+
+### 667 安排数 ** 思路很棒，有点像数学的思维题
+题目：1-n个数，Suppose this list is [a1, a2, a3, ... , an], then the list [|a1 - a2|, |a2 - a3|, |a3 - a4|, ... , |an-1 - an|] has exactly k distinct integers. 
+```
+Input: n = 3, k = 1 Output: [1, 2, 3]
+Input: n = 3, k = 2 Output: [1, 3, 2]
+```
+思路：很妙的安排方式：从1~n-k-1这些数字正序排列，n-k ~ n zigzag排列：比如n=6 k=3，结果就是[1, 2, 3, 6, 4, 5]
+
+### 670 交换两个数字的顺序 使数变得最大 ** 贪心
+```
+Input: 2736 Output: 7236
+Input: 9973 Output: 9973
+```
+思路：
 
 ### 674 最长连续上升子序列 和485思路一样 * 
 题目：连续的上升，如果是不连续就是dp算法；

@@ -542,6 +542,325 @@ int NumberOf1_Solution2(int n)
 ```
 思路：有符号数，右移在右边补上符号位，比如负数右移，在最右边补1；尽量用左右移表示乘除，效率高；将数与其减1做与运算；
 
+### 16 数值的整数次方
+题目：实现函数double Power(double base, int exponent)，求base的exponent
+次方。不得使用库函数，同时不需要考虑大数问题。
+```
+double PowerWithUnsignedExponent(double base, unsigned int exponent)
+{
+    if (exponent == 0)
+        return 1;
+    if (exponent == 1)
+        return base;
+
+    double result = PowerWithUnsignedExponent(base, exponent >> 1);
+    result *= result;
+    if ((exponent & 0x1) == 1)
+        result *= base;
+
+    return result;
+}
+bool equal(double num1, double num2)
+{
+    if ((num1 - num2 > -0.0000001) && (num1 - num2 < 0.0000001))
+        return true;
+    else
+        return false;
+}
+double Power(double base, int exponent)
+{
+    g_InvalidInput = false;
+
+    if (equal(base, 0.0) && exponent < 0)
+    {
+        g_InvalidInput = true;
+        return 0.0;
+    }
+
+    unsigned int absExponent = (unsigned int) (exponent);
+    if (exponent < 0)
+        absExponent = (unsigned int) (-exponent);
+
+    double result = PowerWithUnsignedExponent(base, absExponent);
+    if (exponent < 0)
+        result = 1.0 / result;
+
+    return result;
+}
+```
+思路：写出来很简单，注意特殊情况：负指数，0指数，负指数情况也要考虑基数是0的情况；求次方O(logn)的方法也必须掌握！
+
+### 17 打印1到最大的n位数
+题目：输入数字n，按顺序打印出从1最大的n位十进制数。比如输入3，则
+打印出1、2、3一直到最大的3位数即999。
+```
+void Print1ToMaxOfNDigits_1(int n)
+{
+    if (n <= 0)
+        return;
+
+    char *number = new char[n + 1];
+    memset(number, '0', n);
+    number[n] = '\0';
+
+    while (!Increment(number))
+    {
+        PrintNumber(number);
+    }
+
+    delete[]number;
+}
+
+// 字符串number表示一个数字，在 number上增加1
+// 如果做加法溢出，则返回true；否则为false
+bool Increment(char* number)
+{
+    bool isOverflow = false;
+    int nTakeOver = 0;
+    int nLength = strlen(number);
+
+    for (int i = nLength - 1; i >= 0; i--)
+    {
+        int nSum = number[i] - '0' + nTakeOver;
+        if (i == nLength - 1)
+            nSum++;
+
+        if (nSum >= 10)
+        {
+            if (i == 0)
+                isOverflow = true;
+            else
+            {
+                nSum -= 10;
+                nTakeOver = 1;
+                number[i] = '0' + nSum;
+            }
+        }
+        else
+        {
+            number[i] = '0' + nSum;
+            break;
+        }
+    }
+
+    return isOverflow;
+}
+
+// ====================方法二====================
+void Print1ToMaxOfNDigits_2(int n)
+{
+    if (n <= 0)
+        return;
+
+    char* number = new char[n + 1];
+    number[n] = '\0';
+
+    for (int i = 0; i < 10; ++i)
+    {
+        number[0] = i + '0';
+        Print1ToMaxOfNDigitsRecursively(number, n, 0);
+    }
+
+    delete[] number;
+}
+
+void Print1ToMaxOfNDigitsRecursively(char* number, int length, int index)
+{
+    if (index == length - 1)
+    {
+        PrintNumber(number);
+        return;
+    }
+
+    for (int i = 0; i < 10; ++i)
+    {
+        number[index + 1] = i + '0';
+        Print1ToMaxOfNDigitsRecursively(number, length, index + 1);
+    }
+}
+// ====================公共函数====================
+// 字符串number表示一个数字，数字有若干个0开头
+// 打印出这个数字，并忽略开头的0
+void PrintNumber(char* number)
+{
+    bool isBeginning0 = true;
+    int nLength = strlen(number);
+
+    for (int i = 0; i < nLength; ++i)
+    {
+        if (isBeginning0 && number[i] != '0')
+            isBeginning0 = false;
+
+        if (!isBeginning0)
+        {
+            printf("%c", number[i]);
+        }
+    }
+
+    printf("\t");
+}
+```
+思路：也是注意很多坑，主要是大数问题，超过最大整数的可表示范围，最好用字符串来表示数字；第二种方法排列组合很巧妙了；
+
+### 18.1 在O(1)时间删除链表结点
+题目：给定单向链表的头指针和一个结点指针，定义一个函数在O(1)时间删除该结点。
+```
+void DeleteNode(ListNode** pListHead, ListNode* pToBeDeleted)
+{
+    if(!pListHead || !pToBeDeleted)
+        return;
+
+    // 要删除的结点不是尾结点
+    if(pToBeDeleted->m_pNext != nullptr)
+    {
+        ListNode* pNext = pToBeDeleted->m_pNext;
+        pToBeDeleted->m_nValue = pNext->m_nValue;
+        pToBeDeleted->m_pNext = pNext->m_pNext;
+ 
+        delete pNext;
+        pNext = nullptr;
+    }
+    // 链表只有一个结点，删除头结点（也是尾结点）
+    else if(*pListHead == pToBeDeleted)
+    {
+        delete pToBeDeleted;
+        pToBeDeleted = nullptr;
+        *pListHead = nullptr;
+    }
+    // 链表中有多个结点，删除尾结点
+    else
+    {
+        ListNode* pNode = *pListHead;
+        while(pNode->m_pNext != pToBeDeleted)
+        {
+            pNode = pNode->m_pNext;            
+        }
+ 
+        pNode->m_pNext = nullptr;
+        delete pToBeDeleted;
+        pToBeDeleted = nullptr;
+    }
+}
+```
+思路：用下一个节点复制到这个节点，然后删掉下一个节点，方法很妙；需要考虑删除节点是否为tail；
+
+### 18.2 删除链表中重复的结点
+题目：在一个排序的链表中，如何删除重复的结点？
+```
+void DeleteDuplication(ListNode** pHead)
+{
+    if(pHead == nullptr || *pHead == nullptr)
+        return;
+
+    ListNode* pPreNode = nullptr;
+    ListNode* pNode = *pHead;
+    while(pNode != nullptr)
+    {
+        ListNode *pNext = pNode->m_pNext;
+        bool needDelete = false;
+        if(pNext != nullptr && pNext->m_nValue == pNode->m_nValue)
+            needDelete = true;
+
+        if(!needDelete)
+        {
+            pPreNode = pNode;
+            pNode = pNode->m_pNext;
+        }
+        else
+        {
+            int value = pNode->m_nValue;
+            ListNode* pToBeDel = pNode;
+            while(pToBeDel != nullptr && pToBeDel->m_nValue == value)
+            {
+                pNext = pToBeDel->m_pNext;
+
+                delete pToBeDel;
+                pToBeDel = nullptr;
+
+                pToBeDel = pNext;
+            }
+
+            if(pPreNode == nullptr)
+                *pHead = pNext;
+            else
+                pPreNode->m_pNext = pNext;
+            pNode = pNext;
+        }
+    }
+}
+```
+思路：要考虑删除投加点的情况；
+
+### 19 正则表达式匹配 
+题目：请实现一个函数用来匹配包含'.'和'*'的正则表达式。模式中的字符'.'
+表示任意一个字符，而'*'表示它前面的字符可以出现任意次（含0次）。在本题
+中，匹配是指字符串的所有字符匹配整个模式。例如，字符串"aaa"与模式"a.a"
+和"ab*ac*a"匹配，但与"aa.a"及"ab*a"均不匹配。
+```
+bool match(const char* str, const char* pattern)
+{
+    if(str == nullptr || pattern == nullptr)
+        return false;
+
+    return matchCore(str, pattern);
+}
+
+bool matchCore(const char* str, const char* pattern)
+{
+    if(*str == '\0' && *pattern == '\0')
+        return true;
+
+    if(*str != '\0' && *pattern == '\0')
+        return false;
+
+    if(*(pattern + 1) == '*')
+    {
+        if(*pattern == *str || (*pattern == '.' && *str != '\0'))
+            // 进入有限状态机的下一个状态
+            return matchCore(str + 1, pattern + 2)
+            // 继续留在有限状态机的当前状态 
+            || matchCore(str + 1, pattern)
+            // 略过一个'*' 
+            || matchCore(str, pattern + 2);
+        else
+            // 略过一个'*'
+            return matchCore(str, pattern + 2);
+    }
+
+    if(*str == *pattern || (*pattern == '.' && *str != '\0'))
+        return matchCore(str + 1, pattern + 1);
+
+    return false;
+}
+//dp的方法：
+bool isMatch(string s, string p) {
+	int m = s.size(), n = p.size();
+	vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
+	dp[0][0] = true;
+	for (int i = 0; i <= m; i++) {
+		for (int j = 1; j <= n; j++) {
+			if (p[j - 1] == '*') {
+				dp[i][j] = dp[i][j - 2] || (i && dp[i - 1][j] && (s[i - 1] == p[j - 2] || p[j - 2] == '.'));
+			} else {
+				dp[i][j] = i && dp[i - 1][j - 1] && (s[i - 1] == p[j - 1] || p[j - 1] == '.');
+			}
+		}
+	}
+	return dp[m][n];
+}
+```
+思路：看了解析之后觉得还行，但是第一次来做的话，可能会忽略不少情况；
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,8 @@
 # 剑指offer
 
+## note：
+- 21题的可扩展解法很有意思，mark
+
 ### 1 赋值运算符
 ```
 CMyString& CMyString::operator = (const CMyString& str)
@@ -587,6 +590,14 @@ double Power(double base, int exponent)
 
     return result;
 }
+//leetcode 简单AC答案 很快
+double myPow(double x, int n) {
+	if(n<0) return 1/x * myPow(1/x, -(n+1));
+	if(n==0) return 1;
+	if(n==2) return x*x;
+	if(n%2==0) return myPow( myPow(x, n/2), 2);
+	else return x*myPow( myPow(x, n/2), 2);
+}
 ```
 思路：写出来很简单，注意特殊情况：负指数，0指数，负指数情况也要考虑基数是0的情况；求次方O(logn)的方法也必须掌握！
 
@@ -851,15 +862,674 @@ bool isMatch(string s, string p) {
 ```
 思路：看了解析之后觉得还行，但是第一次来做的话，可能会忽略不少情况；
 
+### 面试题20：表示数值的字符串
+题目：请实现一个函数用来判断字符串是否表示数值（包括整数和小数）。例如，
+字符串“+100”、“5e2”、“-123”、“3.1416”及“-1E-16”都表示数值，但“12e”、
+“1a3.14”、“1.2.3”、“+-5”及“12e+5.4”都不是
+```
+// 数字的格式可以用A[.[B]][e|EC]或者.B[e|EC]表示，其中A和C都是
+// 整数（可以有正负号，也可以没有），而B是一个无符号整数
+bool isNumeric(const char* str)
+{
+    if(str == nullptr)
+        return false;
 
+    bool numeric = scanInteger(&str);
 
+    // 如果出现'.'，接下来是数字的小数部分
+    if(*str == '.'){
+        ++str;
 
+        // 下面一行代码用||的原因：
+        // 1. 小数可以没有整数部分，例如.123等于0.123；
+        // 2. 小数点后面可以没有数字，例如233.等于233.0；
+        // 3. 当然小数点前面和后面可以有数字，例如233.666
+        numeric = scanUnsignedInteger(&str) || numeric;
+    }
 
+    // 如果出现'e'或者'E'，接下来跟着的是数字的指数部分
+    if(*str == 'e' || *str == 'E'){
+        ++str;
 
+        // 下面一行代码用&&的原因：
+        // 1. 当e或E前面没有数字时，整个字符串不能表示数字，例如.e1、e1；
+        // 2. 当e或E后面没有整数时，整个字符串不能表示数字，例如12e、12e+5.4
+        numeric = numeric && scanInteger(&str);
+    }
 
+    return numeric && *str == '\0';
+}
 
+bool scanUnsignedInteger(const char** str)
+{
+    const char* before = *str;
+    while(**str != '\0' && **str >= '0' && **str <= '9')
+        ++(*str);
 
+    // 当str中存在若干0-9的数字时，返回true
+    return *str > before;
+}
 
+// 整数的格式可以用[+|-]B表示, 其中B为无符号整数
+bool scanInteger(const char** str)
+{
+    if(**str == '+' || **str == '-')
+        ++(*str);
+    return scanUnsignedInteger(str);
+}
+```
+思路：就是要考虑全面，情况比较多，代码逻辑思路以及各式都很好；
+
+### 21 调整数组顺序使奇数位于偶数前面
+题目：输入一个整数数组，实现一个函数来调整该数组中数字的顺序，使得所有
+奇数位于数组的前半部分，所有偶数位于数组的后半部分。
+```
+void ReorderOddEven_2(int *pData, unsigned int length){
+    Reorder(pData, length, isEven);
+}
+
+void Reorder(int *pData, unsigned int length, bool (*func)(int)){
+    if(pData == nullptr || length == 0)
+        return;
+
+    int *pBegin = pData;
+    int *pEnd = pData + length - 1;
+
+    while(pBegin < pEnd){
+        // 向后移动pBegin
+        while(pBegin < pEnd && !func(*pBegin))
+            pBegin ++;
+
+        // 向前移动pEnd
+        while(pBegin < pEnd && func(*pEnd))
+            pEnd --;
+
+        if(pBegin < pEnd){
+            int temp = *pBegin;
+            *pBegin = *pEnd;
+            *pEnd = temp;
+        }
+    }
+}
+
+bool isEven(int n){
+    return (n & 1) == 0;
+}
+```
+思路：这个问题的解法用双指针很好解决，但是将判断标准设置成函数指针的形式，需要get！！！！
+
+### 22 链表中倒数第k个结点
+题目：输入一个链表，输出该链表中倒数第k个结点。为了符合大多数人的习惯，
+本题从1开始计数，即链表的尾结点是倒数第1个结点。例如一个链表有6个结点，
+从头结点开始它们的值依次是1、2、3、4、5、6。这个链表的倒数第3个结点是
+值为4的结点。
+```
+ListNode* FindKthToTail(ListNode* pListHead, unsigned int k)
+{
+    if(pListHead == nullptr || k == 0)
+        return nullptr;
+
+    ListNode *pAhead = pListHead;
+    ListNode *pBehind = nullptr;
+    for(unsigned int i = 0; i < k - 1; ++ i){
+        if(pAhead->m_pNext != nullptr)
+            pAhead = pAhead->m_pNext;
+        else{
+            return nullptr;
+        }
+    }
+    pBehind = pListHead;
+    while(pAhead->m_pNext != nullptr){
+        pAhead = pAhead->m_pNext;
+        pBehind = pBehind->m_pNext;
+    }
+
+    return pBehind;
+}
+```
+思路：双指针，但是这题主要考虑鲁棒性，就是考虑一些特殊输入带来的特殊情况；k=0，k大于链表长度，输入空链表；
+
+### 23 链表中环的入口结点
+题目：一个链表中包含环，如何找出环的入口结点？例如，在图3.8的链表中，环的入口结点是结点3
+```
+ListNode *detectCycle(ListNode *head) {
+	ListNode* slow(head);
+	ListNode* fast(head);
+	ListNode* meet(NULL);
+	while(fast){
+		slow = slow->next;
+		fast = fast->next;
+		if(fast){
+			fast = fast->next;
+		}
+		if(fast == slow){
+			meet = fast;
+			break;
+		}
+	}
+	if(meet){
+		while(true){
+			if(meet == head)
+				return meet;
+			meet = meet->next;
+			head = head->next;
+		}
+	}
+	return NULL;
+}
+```
+思路：就快慢指针
+
+### 24 反转链表
+题目：定义一个函数，输入一个链表的头结点，反转该链表并输出反转后链表的头结点。
+```
+ListNode* ReverseList(ListNode* pHead)
+{
+    ListNode* pReversedHead = nullptr;
+    ListNode* pNode = pHead;
+    ListNode* pPrev = nullptr;
+    while(pNode != nullptr){
+        ListNode* pNext = pNode->m_pNext;
+
+        if(pNext == nullptr)
+            pReversedHead = pNode;
+
+        pNode->m_pNext = pPrev;
+
+        pPrev = pNode;
+        pNode = pNext;
+    }
+
+    return pReversedHead;
+}
+```
+思路：就用多个指针来操作；
+
+### 25 合并两个排序的链表
+题目：输入两个递增排序的链表，合并这两个链表并使新链表中的结点仍然是按
+照递增排序的。例如输入图3.11中的链表1和链表2，则合并之后的升序链表如链
+表3所示。
+```
+ListNode* Merge(ListNode* pHead1, ListNode* pHead2)
+{
+    if(pHead1 == nullptr)
+        return pHead2;
+    else if(pHead2 == nullptr)
+        return pHead1;
+
+    ListNode* pMergedHead = nullptr;
+
+    if(pHead1->m_nValue < pHead2->m_nValue){
+        pMergedHead = pHead1;
+        pMergedHead->m_pNext = Merge(pHead1->m_pNext, pHead2);
+    }
+    else{
+        pMergedHead = pHead2;
+        pMergedHead->m_pNext = Merge(pHead1, pHead2->m_pNext);
+    }
+
+    return pMergedHead;
+}
+```
+思路：就是常规的链表题
+
+### 26 树的子结构
+题目：输入两棵二叉树A和B，判断B是不是A的子结构。
+```
+bool HasSubtree(BinaryTreeNode* pRoot1, BinaryTreeNode* pRoot2)
+{
+    bool result = false;
+    if(pRoot1 != nullptr && pRoot2 != nullptr){
+        if(Equal(pRoot1->m_dbValue, pRoot2->m_dbValue))
+            result = DoesTree1HaveTree2(pRoot1, pRoot2);
+        if(!result)
+            result = HasSubtree(pRoot1->m_pLeft, pRoot2);
+        if(!result)
+            result = HasSubtree(pRoot1->m_pRight, pRoot2);
+    }
+
+    return result;
+}
+
+bool DoesTree1HaveTree2(BinaryTreeNode* pRoot1, BinaryTreeNode* pRoot2)
+{
+    if(pRoot2 == nullptr)
+        return true;
+    if(pRoot1 == nullptr)
+        return false;
+
+    if(!Equal(pRoot1->m_dbValue, pRoot2->m_dbValue))
+        return false;
+
+    return DoesTree1HaveTree2(pRoot1->m_pLeft, pRoot2->m_pLeft) &&
+        DoesTree1HaveTree2(pRoot1->m_pRight, pRoot2->m_pRight);
+}
+bool Equal(double num1, double num2)
+{
+    if((num1 - num2 > -0.0000001) && (num1 - num2 < 0.0000001))
+        return true;
+    else
+        return false;
+}
+```
+思路：第一次循环树的节点，然后对每个节点判断以该节点为根的树与第二颗树是否相同；判断相同也是用的递归；考虑空指针的情况，double不能直接==比较大小；
+
+### 27 二叉树的镜像
+题目：请完成一个函数，输入一个二叉树，该函数输出它的镜像。
+```
+void MirrorRecursively(BinaryTreeNode *pNode)
+{
+    if((pNode == nullptr) || (pNode->m_pLeft == nullptr && pNode->m_pRight))
+        return;
+
+    BinaryTreeNode *pTemp = pNode->m_pLeft;
+    pNode->m_pLeft = pNode->m_pRight;
+    pNode->m_pRight = pTemp;
+    
+    if(pNode->m_pLeft)
+        MirrorRecursively(pNode->m_pLeft);  
+
+    if(pNode->m_pRight)
+        MirrorRecursively(pNode->m_pRight); 
+}
+void MirrorIteratively(BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return;
+
+    std::stack<BinaryTreeNode*> stackTreeNode;
+    stackTreeNode.push(pRoot);
+
+    while(stackTreeNode.size() > 0){
+        BinaryTreeNode *pNode = stackTreeNode.top();
+        stackTreeNode.pop();
+
+        BinaryTreeNode *pTemp = pNode->m_pLeft;
+        pNode->m_pLeft = pNode->m_pRight;
+        pNode->m_pRight = pTemp;
+
+        if(pNode->m_pLeft)
+            stackTreeNode.push(pNode->m_pLeft);
+
+        if(pNode->m_pRight)
+            stackTreeNode.push(pNode->m_pRight);
+    }
+}
+```
+思路：就常规的左右调换 然后再递归调用；
+
+### 28 对称的二叉树
+题目：请实现一个函数，用来判断一棵二叉树是不是对称的。如果一棵二叉树和它的镜像一样，那么它是对称的。
+```
+bool isSymmetrical(BinaryTreeNode* pRoot)
+{
+    return isSymmetrical(pRoot, pRoot);
+}
+bool isSymmetrical(BinaryTreeNode* pRoot1, BinaryTreeNode* pRoot2)
+{
+    if(pRoot1 == nullptr && pRoot2 == nullptr)
+        return true;
+
+    if(pRoot1 == nullptr || pRoot2 == nullptr)
+        return false;
+
+    if(pRoot1->m_nValue != pRoot2->m_nValue)
+        return false;
+
+    return isSymmetrical(pRoot1->m_pLeft, pRoot2->m_pRight)
+        && isSymmetrical(pRoot1->m_pRight, pRoot2->m_pLeft);
+}
+```
+思路：就很常规，很上一题差不多；
+
+### 29 顺时针打印矩阵
+题目：输入一个矩阵，按照从外向里以顺时针的顺序依次打印出每一个数字。
+```
+void PrintMatrixClockwisely(int** numbers, int columns, int rows)
+{
+    if(numbers == nullptr || columns <= 0 || rows <= 0)
+        return;
+
+    int start = 0;
+
+    while(columns > start * 2 && rows > start * 2)
+    {
+        PrintMatrixInCircle(numbers, columns, rows, start);
+
+        ++start;
+    }
+}
+
+void PrintMatrixInCircle(int** numbers, int columns, int rows, int start)
+{
+    int endX = columns - 1 - start;
+    int endY = rows - 1 - start;
+
+    // 从左到右打印一行
+    for(int i = start; i <= endX; ++i){
+        int number = numbers[start][i];
+        printNumber(number);
+    }
+
+    // 从上到下打印一列
+    if(start < endY){
+        for(int i = start + 1; i <= endY; ++i){
+            int number = numbers[i][endX];
+            printNumber(number);
+        }
+    }
+
+    // 从右到左打印一行
+    if(start < endX && start < endY){
+        for(int i = endX - 1; i >= start; --i){
+            int number = numbers[endY][i];
+            printNumber(number);
+        }
+    }
+
+    // 从下到上打印一行
+    if(start < endX && start < endY - 1){
+        for(int i = endY - 1; i >= start + 1; --i){
+            int number = numbers[i][start];
+            printNumber(number);
+        }
+    }
+}
+void printNumber(int number)
+{
+    printf("%d\t", number);
+}
+```
+思路：就是逻辑题，没啥数据结构与算法的东西；
+
+### 30 包含min函数的栈
+题目：定义栈的数据结构，请在该类型中实现一个能够得到栈的最小元素的min函数。在该栈中，调用min、push及pop的时间复杂度都是O(1)。
+思路：就用一个辅助栈来维护最小值；
+
+### 31 栈的压入、弹出序列
+题目：输入两个整数序列，第一个序列表示栈的压入顺序，请判断第二个序列是
+否为该栈的弹出顺序。假设压入栈的所有数字均不相等。例如序列1、2、3、4、
+5是某栈的压栈序列，序列4、5、3、2、1是该压栈序列对应的一个弹出序列，但
+4、3、5、1、2就不可能是该压栈序列的弹出序列。
+```
+bool IsPopOrder(const int* pPush, const int* pPop, int nLength)
+{
+    bool bPossible = false;
+
+    if(pPush != nullptr && pPop != nullptr && nLength > 0){
+        const int* pNextPush = pPush;
+        const int* pNextPop = pPop;
+
+        std::stack<int> stackData;
+
+        while(pNextPop - pPop < nLength){
+            // 当辅助栈的栈顶元素不是要弹出的元素
+            // 先压入一些数字入栈
+            while(stackData.empty() || stackData.top() != *pNextPop){
+                // 如果所有数字都压入辅助栈了，退出循环
+                if(pNextPush - pPush == nLength)
+                    break;
+
+                stackData.push(*pNextPush);
+
+                pNextPush ++;
+            }
+
+            if(stackData.top() != *pNextPop)
+                break;
+
+            stackData.pop();
+            pNextPop ++;
+        }
+        if(stackData.empty() && pNextPop - pPop == nLength)
+            bPossible = true;
+    }
+    return bPossible;
+}
+//leetcode 更简单 少了很多条件判断 以及非法输入的判断 就看的很简单
+bool validateStackSequences(vector<int>& pushed, vector<int>& popped) {
+	stack<int> temp;
+	int j=0;
+	for(int i=0; i<pushed.size(); i++){
+		temp.push(pushed[i]);
+		while(!temp.empty() && temp.top()==popped[j]){
+			temp.pop();
+			j++;
+		}
+	}
+	return temp.empty();
+}
+```
+思路：用一个辅助栈来模拟压入的过程，如果与弹出栈栈顶元素相同，就弹出，不同就压入元素；最后如果栈是非空，说明序列不合法；
+
+### 32.1 不分行从上往下打印二叉树
+题目：从上往下打印出二叉树的每个结点，同一层的结点按照从左到右的顺序打印。
+```
+void PrintFromTopToBottom(BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return;
+
+    std::deque<BinaryTreeNode *> dequeTreeNode;
+    dequeTreeNode.push_back(pRoot);
+    while(dequeTreeNode.size()){
+        BinaryTreeNode *pNode = dequeTreeNode.front();
+        dequeTreeNode.pop_front();
+
+        printf("%d ", pNode->m_nValue);
+
+        if(pNode->m_pLeft)
+            dequeTreeNode.push_back(pNode->m_pLeft);
+
+        if(pNode->m_pRight)
+            dequeTreeNode.push_back(pNode->m_pRight);
+    }
+}
+```
+思路：就是用一个辅助队列来实现；挺简单的
+
+### 32.2 分行从上到下打印二叉树
+题目：从上到下按层打印二叉树，同一层的结点按从左到右的顺序打印，每一层打印到一行。
+```
+void Print(BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return;
+
+    std::queue<BinaryTreeNode*> nodes;
+    nodes.push(pRoot);
+    int nextLevel = 0;
+    int toBePrinted = 1;
+    while(!nodes.empty()){
+        BinaryTreeNode* pNode = nodes.front();
+        printf("%d ", pNode->m_nValue);
+
+        if(pNode->m_pLeft != nullptr){
+            nodes.push(pNode->m_pLeft);
+            ++nextLevel;
+        }
+        if(pNode->m_pRight != nullptr){
+            nodes.push(pNode->m_pRight);
+            ++nextLevel;
+        }
+
+        nodes.pop();
+        --toBePrinted;
+        if(toBePrinted == 0){
+            printf("\n");
+            toBePrinted = nextLevel;
+            nextLevel = 0;
+        }
+    }
+}
+```
+思路：自己做的话就用两个栈，一个作为辅助；
+
+### 32.3 之字形打印二叉树
+题目：请实现一个函数按照之字形顺序打印二叉树，即第一行按照从左到右的顺序打印，第二层按照从右到左的顺序打印，第三行再按照从左到右的顺序打印，其他行以此类推。
+```
+void Print(BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return;
+
+    std::stack<BinaryTreeNode*> levels[2];
+    int current = 0;
+    int next = 1;
+
+    levels[current].push(pRoot);
+    while(!levels[0].empty() || !levels[1].empty()){
+        BinaryTreeNode* pNode = levels[current].top();
+        levels[current].pop();
+
+        printf("%d ", pNode->m_nValue);
+
+        if(current == 0){
+            if(pNode->m_pLeft != nullptr)
+                levels[next].push(pNode->m_pLeft);
+            if(pNode->m_pRight != nullptr)
+                levels[next].push(pNode->m_pRight);
+        }
+        else{
+            if(pNode->m_pRight != nullptr)
+                levels[next].push(pNode->m_pRight);
+            if(pNode->m_pLeft != nullptr)
+                levels[next].push(pNode->m_pLeft);
+        }
+
+        if(levels[current].empty()){
+            printf("\n");
+            current = 1 - current;
+            next = 1 - next;
+        }
+    }
+}
+//leetcode 代码 感觉比较好理解 有点妙
+vector<vector<int> > zigzagLevelOrder(TreeNode* root) {
+    if (root == NULL) {
+        return vector<vector<int> > ();
+    }
+    vector<vector<int> > result;
+
+    queue<TreeNode*> nodesQueue;
+    nodesQueue.push(root);
+    bool leftToRight = true;
+
+    while ( !nodesQueue.empty()) {
+        int size = nodesQueue.size();
+        vector<int> row(size);
+        for (int i = 0; i < size; i++) {
+            TreeNode* node = nodesQueue.front();
+            nodesQueue.pop();
+
+            // find position to fill node's value
+            int index = (leftToRight) ? i : (size - 1 - i);
+
+            row[index] = node->val;
+            if (node->left) {
+                nodesQueue.push(node->left);
+            }
+            if (node->right) {
+                nodesQueue.push(node->right);
+            }
+        }
+        // after this level
+        leftToRight = !leftToRight;
+        result.push_back(row);
+    }
+    return result;
+}
+```
+思路：就用辅助栈，然后再来一个变量控制一下奇偶层，奇层从左向右，偶层从右向左这样的；
+
+### 33 二叉搜索树的后序遍历序列
+题目：输入一个整数数组，判断该数组是不是某二叉搜索树的后序遍历的结果。如果是则返回true，否则返回false。假设输入的数组的任意两个数字都互不相同。
+```
+// BST：Binary Search Tree，二叉搜索树
+bool VerifySquenceOfBST(int sequence[], int length)
+{
+    if(sequence == nullptr || length <= 0)
+        return false;
+
+    int root = sequence[length - 1];
+
+    // 在二叉搜索树中左子树的结点小于根结点
+    int i = 0;
+    for(; i < length - 1; ++ i){
+        if(sequence[i] > root)
+            break;
+    }
+
+    // 在二叉搜索树中右子树的结点大于根结点
+    int j = i;
+    for(; j < length - 1; ++ j){
+        if(sequence[j] < root)
+            return false;
+    }
+
+    // 判断左子树是不是二叉搜索树
+    bool left = true;
+    if(i > 0)
+        left = VerifySquenceOfBST(sequence, i);
+
+    // 判断右子树是不是二叉搜索树
+    bool right = true;
+    if(i < length - 1)
+        right = VerifySquenceOfBST(sequence + i, length - i - 1);
+
+    return (left && right);
+}
+```
+思路：就利用二叉搜索树的性质，开始以为给的是树的结构，所以觉得挺简单的，其实输入是一个数组，不过也还是挺简单的；
+
+### 34 二叉树中和为某一值的路径
+题目：输入一棵二叉树和一个整数，打印出二叉树中结点值的和为输入整数的所有路径。从树的根结点开始往下一直到叶结点所经过的结点形成一条路径。
+```
+void FindPath(BinaryTreeNode* pRoot, int expectedSum)
+{
+    if(pRoot == nullptr)
+        return;
+
+    std::vector<int> path;
+    int currentSum = 0;
+    FindPath(pRoot, expectedSum, path, currentSum);
+}
+void FindPath
+(
+    BinaryTreeNode*   pRoot,        
+    int               expectedSum,  
+    std::vector<int>& path,         
+    int&              currentSum
+)
+{
+    currentSum += pRoot->m_nValue;
+    path.push_back(pRoot->m_nValue);
+
+    // 如果是叶结点，并且路径上结点的和等于输入的值
+    // 打印出这条路径
+    bool isLeaf = pRoot->m_pLeft == nullptr && pRoot->m_pRight == nullptr;
+    if(currentSum == expectedSum && isLeaf){
+        printf("A path is found: ");
+        std::vector<int>::iterator iter = path.begin();
+        for(; iter != path.end(); ++ iter)
+            printf("%d\t", *iter);
+        
+        printf("\n");
+    }
+
+    // 如果不是叶结点，则遍历它的子结点
+    if(pRoot->m_pLeft != nullptr)
+        FindPath(pRoot->m_pLeft, expectedSum, path, currentSum);
+    if(pRoot->m_pRight != nullptr)
+        FindPath(pRoot->m_pRight, expectedSum, path, currentSum);
+
+    // 在返回到父结点之前，在路径上删除当前结点，
+    // 并在currentSum中减去当前结点的值
+    currentSum -= pRoot->m_nValue;
+    path.pop_back();
+} 
+```
+思路：就有点回溯的思想在里面，挺简单的；
 
 
 

@@ -2,6 +2,32 @@
 
 ## note：
 - 21题的可扩展解法很有意思，mark
+- 46题、51题值得关注
+```
+//根据一个数将数组分成左右两部分的函数，左边小于右边
+int Partition(int data[], int length, int start, int end)
+{
+    if(data == nullptr || length <= 0 || start < 0 || end >= length)
+        throw new std::exception("Invalid Parameters");
+
+    int index = RandomInRange(start, end);
+    Swap(&data[index], &data[end]);
+
+    int small = start - 1;
+    for(index = start; index < end; ++ index){
+        if(data[index] < data[end]){
+            ++ small;
+            if(small != index)
+                Swap(&data[index], &data[small]);
+        }
+    }
+
+    ++ small;
+    Swap(&data[small], &data[end]);
+
+    return small;
+}
+```
 
 ### 1 赋值运算符
 ```
@@ -1531,8 +1557,626 @@ void FindPath
 ```
 思路：就有点回溯的思想在里面，挺简单的；
 
+### 35 
 
+### 39：数组中出现次数超过一半的数字
+题目：数组中有一个数字出现的次数超过数组长度的一半，请找出这个数字。例
+如输入一个长度为9的数组{1, 2, 3, 2, 2, 2, 5, 4, 2}。由于数字2在数组中
+出现了5次，超过数组长度的一半，因此输出2。
+```
+//方法一分治
+int MoreThanHalfNum_Solution1(int* numbers, int length)
+{
+    if(CheckInvalidArray(numbers, length))
+        return 0;
+ 
+    int middle = length >> 1;
+    int start = 0;
+    int end = length - 1;
+    int index = Partition(numbers, length, start, end);
+    while(index != middle){
+        if(index > middle){
+            end = index - 1;
+            index = Partition(numbers, length, start, end);
+        }
+        else{
+            start = index + 1;
+            index = Partition(numbers, length, start, end);
+        }
+    }
+ 
+    int result = numbers[middle];
+    if(!CheckMoreThanHalf(numbers, length, result))
+        result = 0;
 
+    return result;
+}
+
+// ====================方法2====================
+int MoreThanHalfNum_Solution2(int* numbers, int length)
+{
+    if(CheckInvalidArray(numbers, length))
+        return 0;
+ 
+    int result = numbers[0];
+    int times = 1;
+    for(int i = 1; i < length; ++i){
+        if(times == 0){
+            result = numbers[i];
+            times = 1;
+        }
+        else if(numbers[i] == result)
+            times++;
+        else
+            times--;
+    }
+ 
+    if(!CheckMoreThanHalf(numbers, length, result))
+        result = 0;
+ 
+    return result;
+}
+```
+思路：方法一就是分治，用快排的思想，找一个基数，并找基数的位置，如果位置在n/2处，就是中位数，出现最多次数的数；方法二就比较适合特定的情况，mark；
+
+### 40 最小的k个数
+题目：输入n个整数，找出其中最小的k个数。例如输入4、5、1、6、2、7、3、8
+这8个数字，则最小的4个数字是1、2、3、4。
+```
+// ====================方法1====================
+void GetLeastNumbers_Solution1(int* input, int n, int* output, int k)
+{
+    if(input == nullptr || output == nullptr || k > n || n <= 0 || k <= 0)
+        return;
+
+    int start = 0;
+    int end = n - 1;
+    int index = Partition(input, n, start, end);
+    while(index != k - 1){
+        if(index > k - 1){
+            end = index - 1;
+            index = Partition(input, n, start, end);
+        }
+        else{
+            start = index + 1;
+            index = Partition(input, n, start, end);
+        }
+    }
+
+    for(int i = 0; i < k; ++i)
+        output[i] = input[i];
+}
+
+// ====================方法2====================
+typedef multiset<int, std::greater<int> >            intSet;
+typedef multiset<int, std::greater<int> >::iterator  setIterator;
+void GetLeastNumbers_Solution2(const vector<int>& data, intSet& leastNumbers, int k)
+{
+    leastNumbers.clear();
+
+    if(k < 1 || data.size() < k)
+        return;
+
+    vector<int>::const_iterator iter = data.begin();
+    for(; iter != data.end(); ++ iter){
+        if((leastNumbers.size()) < k)
+            leastNumbers.insert(*iter);
+
+        else{
+            setIterator iterGreatest = leastNumbers.begin();
+
+            if(*iter < *(leastNumbers.begin())){
+                leastNumbers.erase(iterGreatest);
+                leastNumbers.insert(*iter);
+            }
+        }
+    }
+}
+```
+思路：方案一就是分治的思想，找到第k个数；方法二用最大堆，或者红黑树的数据结构；方法一更快，但是要修改输入数组，方法二虽然慢，但是适合k小，n大的情况；
+
+### 41 数据流中的中位数
+题目：如何得到一个数据流中的中位数？如果从数据流中读出奇数个数值，那么
+中位数就是所有数值排序之后位于中间的数值。如果从数据流中读出偶数个数值，
+那么中位数就是所有数值排序之后中间两个数的平均值。
+```
+template<typename T> class DynamicArray
+{
+public:
+    void Insert(T num)
+    {
+        if(((min.size() + max.size()) & 1) == 0){
+            if(max.size() > 0 && num < max[0]){
+                max.push_back(num);
+                push_heap(max.begin(), max.end(), less<T>());
+
+                num = max[0];
+
+                pop_heap(max.begin(), max.end(), less<T>());
+                max.pop_back();
+            }
+
+            min.push_back(num);
+            push_heap(min.begin(), min.end(), greater<T>());
+        }
+        else{
+            if(min.size() > 0 && min[0] < num){
+                min.push_back(num);
+                push_heap(min.begin(), min.end(), greater<T>());
+
+                num = min[0];
+
+                pop_heap(min.begin(), min.end(), greater<T>());
+                min.pop_back();
+            }
+
+            max.push_back(num);
+            push_heap(max.begin(), max.end(), less<T>());
+        }
+    }
+
+    T GetMedian()
+    {
+        int size = min.size() + max.size();
+        if(size == 0)
+            throw exception("No numbers are available");
+
+        T median = 0;
+        if((size & 1) == 1)
+            median = min[0];
+        else
+            median = (min[0] + max[0]) / 2;
+
+        return median;
+    }
+
+private:
+    vector<T> min;
+    vector<T> max;
+};
+```
+思路：维护一个最大堆和最小堆，数据量保持平衡，中位数就是最大堆的最大值与最小堆的最小值的平均值，或者中间值；
+
+### 42 连续子数组的最大和
+题目：输入一个整型数组，数组里有正数也有负数。数组中一个或连续的多个整
+数组成一个子数组。求所有子数组的和的最大值。要求时间复杂度为O(n)。
+```
+bool g_InvalidInput = false;
+int FindGreatestSumOfSubArray(int *pData, int nLength)
+{
+    if((pData == nullptr) || (nLength <= 0)){
+        g_InvalidInput = true;
+        return 0;
+    }
+
+    g_InvalidInput = false;
+
+    int nCurSum = 0;
+    int nGreatestSum = 0x80000000;
+    for(int i = 0; i < nLength; ++i){
+        if(nCurSum <= 0)
+            nCurSum = pData[i];
+        else
+            nCurSum += pData[i];
+
+        if(nCurSum > nGreatestSum)
+            nGreatestSum = nCurSum;
+    }
+
+    return nGreatestSum;
+} 
+```
+思路：动态规划的思想，还算行？
+
+### 43 从1到n整数中1出现的次数
+题目：输入一个整数n，求从1到n这n个整数的十进制表示中1出现的次数。例如
+输入12，从1到12这些整数中包含1 的数字有1，10，11和12，1一共出现了5次。
+```
+// ====================方法一====================
+int NumberOf1Between1AndN_Solution1(unsigned int n)
+{
+    int number = 0;
+
+    for(unsigned int i = 1; i <= n; ++ i)
+        number += NumberOf1(i);
+
+    return number;
+}
+
+int NumberOf1(unsigned int n)
+{
+    int number = 0;
+    while(n)
+    {
+        if(n % 10 == 1)
+            number ++;
+
+        n = n / 10;
+    }
+
+    return number;
+}
+
+// ====================方法二====================
+int NumberOf1Between1AndN_Solution2(int n)
+{
+    if(n <= 0)
+        return 0;
+
+    char strN[50];
+    sprintf(strN, "%d", n);
+
+    return NumberOf1(strN);
+}
+
+int NumberOf1(const char* strN)
+{
+    if(!strN || *strN < '0' || *strN > '9' || *strN == '\0')
+        return 0;
+
+    int first = *strN - '0';
+    unsigned int length = static_cast<unsigned int>(strlen(strN));
+
+    if(length == 1 && first == 0)
+        return 0;
+
+    if(length == 1 && first > 0)
+        return 1;
+
+    // 假设strN是"21345"
+    // numFirstDigit是数字10000-19999的第一个位中1的数目
+    int numFirstDigit = 0;
+    if(first > 1)
+        numFirstDigit = PowerBase10(length - 1);
+    else if(first == 1)
+        numFirstDigit = atoi(strN + 1) + 1;
+
+    // numOtherDigits是01346-21345除了第一位之外的数位中1的数目
+    int numOtherDigits = first * (length - 1) * PowerBase10(length - 2);
+    // numRecursive是1-1345中1的数目
+    int numRecursive = NumberOf1(strN + 1);
+
+    return numFirstDigit + numOtherDigits + numRecursive;
+}
+```
+思路：方法一就是暴力；方法二有点东西，可以再看看；
+
+### 44 数字序列中某一位的数字
+题目：数字以0123456789101112131415…的格式序列化到一个字符序列中。在这
+个序列中，第5位（从0开始计数）是5，第13位是1，第19位是4，等等。请写一个函数求任意位对应的数字。
+```
+int digitAtIndex(int index)
+{
+	if(index < 0)
+		return -1;
+
+	int digits = 1;
+	while(true)
+	{
+		int numbers = countOfIntegers(digits);
+		if(index < numbers * digits)
+			return digitAtIndex(index, digits);
+
+		index -= digits * numbers;
+		digits++;
+	}
+
+	return -1;
+}
+
+int countOfIntegers(int digits)
+{
+	if(digits == 1)
+		return 10;
+
+	int count = (int) std::pow(10, digits - 1);
+	return 9 * count;
+}
+
+int digitAtIndex(int index, int digits)
+{
+	int number = beginNumber(digits) + index / digits;
+	int indexFromRight = digits - index % digits;
+	for(int i = 1; i < indexFromRight; ++i)
+		number /= 10;
+	return number % 10;
+}
+
+int beginNumber(int digits)
+{
+	if(digits == 1)
+		return 0;
+
+	return (int) std::pow(10, digits - 1);
+}
+```
+思路：按照位数计算个数，然后比较多出来的数，很快就完成了；
+
+### 45：把数组排成最小的数
+题目：输入一个正整数数组，把数组里所有数字拼接起来排成一个数，打印能拼
+接出的所有数字中最小的一个。例如输入数组{3, 32, 321}，则打印出这3个数
+字能排成的最小数字321323。
+```
+string largestNumber(vector<int> &num) {
+	vector<string> arr;
+	bool flag(false);
+	for(auto i:num){
+		if(i)
+			flag = true;
+		arr.push_back(to_string(i));
+	}
+	if(!flag)
+		return "0";
+	sort(begin(arr), end(arr), [](string &s1, string &s2){ return s1+s2>s2+s1; });
+	string res;
+	for(auto s:arr)
+		res+=s;
+	return  res;
+}
+```
+思路：这个比较排序的方法很妙了啊；
+
+### 46 把数字翻译成字符串
+题目：给定一个数字，我们按照如下规则把它翻译为字符串：0翻译成"a"，1翻
+译成"b"，……，11翻译成"l"，……，25翻译成"z"。一个数字可能有多个翻译。例
+如12258有5种不同的翻译，它们分别是"bccfi"、"bwfi"、"bczi"、"mcfi"和
+"mzi"。请编程实现一个函数用来计算一个数字有多少种不同的翻译方法。
+```
+int GetTranslationCount(int number)
+{
+    if(number < 0)
+        return 0;
+
+    string numberInString = to_string(number);
+    return GetTranslationCount(numberInString);
+}
+
+int GetTranslationCount(const string& number)
+{
+    int length = number.length();
+    int* counts = new int[length];
+    int count = 0;
+
+    for(int i = length - 1; i >= 0; --i){
+        count = 0;
+         if(i < length - 1)
+               count = counts[i + 1];
+         else
+               count = 1;
+
+        if(i < length - 1){
+            int digit1 = number[i] - '0';
+            int digit2 = number[i + 1] - '0';
+            int converted = digit1 * 10 + digit2;
+            if(converted >= 10 && converted <= 25){
+                if(i < length - 2)
+                    count += counts[i + 2];
+                else
+                    count += 1;
+            }
+        }
+
+        counts[i] = count;
+    }
+
+    count = counts[0];
+    delete[] counts;
+
+    return count;
+}
+```
+思路：就是动态规划的想法；
+
+### 47：礼物的最大价值
+题目：在一个m×n的棋盘的每一格都放有一个礼物，每个礼物都有一定的价值
+ （价值大于0）。你可以从棋盘的左上角开始拿格子里的礼物，并每次向左或
+者向下移动一格直到到达棋盘的右下角。给定一个棋盘及其上面的礼物，请计
+算你最多能拿到多少价值的礼物？
+```
+int getMaxValue_solution2(const int* values, int rows, int cols)
+{
+    if(values == nullptr || rows <= 0 || cols <= 0)
+        return 0;
+
+    int* maxValues = new int[cols];
+    for(int i = 0; i < rows; ++i){
+        for(int j = 0; j < cols; ++j){
+            int left = 0;
+            int up = 0;
+
+            if(i > 0)
+                up = maxValues[j];
+
+            if(j > 0)
+                left = maxValues[j - 1];
+
+            maxValues[j] = std::max(left, up) + values[i * cols + j];
+        }
+    }
+
+    int maxValue = maxValues[cols - 1];
+    delete[] maxValues;
+    return maxValue;
+}
+```
+思路：动态规划，计算路径和；
+
+### 48 最长不含重复字符的子字符串
+题目：请从字符串中找出一个最长的不包含重复字符的子字符串，计算该最长子
+字符串的长度。假设字符串中只包含从'a'到'z'的字符。
+```
+int lengthOfLongestSubstring(string s) {
+	int used[128] = {-1};
+	int start(-1);
+	int length(0);
+	for(int i=0; i<s.size(); i++){
+		if(used[s[i]]>start){
+			start = used[s[i]];
+		}
+		length = max(length, i-start);
+		used[s[i]] = i;
+	}
+	return length;
+}
+```
+思路：说是动态规划，其实用哈希表更合适；
+
+### 49 丑数
+题目：我们把只包含因子2、3和5的数称作丑数（Ugly Number）。求按从小到
+大的顺序的第1500个丑数。例如6、8都是丑数，但14不是，因为它包含因子7。
+习惯上我们把1当做第一个丑数。
+```
+int nthUglyNumber(int n) {
+	vector<int> dp(n+1, 0);
+
+	dp[1] = 1;
+	int i2(1), i3(1), i5(1);
+	for(int i=2; i<=n; i++){
+		dp[i] = min(2*dp[i2], min(3*dp[i3], 5*dp[i5]));
+
+		if(dp[i] == 2*dp[i2]) 
+			i2++;
+		if(dp[i] == 3*dp[i3]) 
+			i3++;
+		if(dp[i] == 5*dp[i5]) 
+			i5++;
+	}
+	return dp[n];
+}
+```
+思路：类似动态规划的思路，用哈希表记录；
+
+### 50 字符串中第一个只出现一次的字符
+题目：在字符串中找出第一个只出现一次的字符。如输入"abaccdeff"，则输出'b'。
+```
+char FirstNotRepeatingChar(const char* pString)
+{
+    if(pString == nullptr)
+        return '\0';
+
+    const int tableSize = 256;
+    unsigned int hashTable[tableSize];
+    for(unsigned int i = 0; i < tableSize; ++i)
+        hashTable[i] = 0;
+
+    const char* pHashKey = pString;
+    while(*(pHashKey) != '\0')
+        hashTable[*(pHashKey++)] ++;
+
+    pHashKey = pString;
+    while(*pHashKey != '\0'){
+        if(hashTable[*pHashKey] == 1)
+            return *pHashKey;
+
+        pHashKey++;
+    }
+    return '\0';
+}
+```
+思路：用哈希表两次遍历；
+
+### 51 数组中的逆序对
+题目：在数组中的两个数字如果前面一个数字大于后面的数字，则这两个数字组
+成一个逆序对。输入一个数组，求出这个数组中的逆序对的总数。
+```
+int InversePairs(int* data, int length)
+{
+    if(data == nullptr || length < 0)
+        return 0;
+
+    int* copy = new int[length];
+    for(int i = 0; i < length; ++i)
+        copy[i] = data[i];
+
+    int count = InversePairsCore(data, copy, 0, length - 1);
+    delete[] copy;
+    return count;
+}
+int InversePairsCore(int* data, int* copy, int start, int end)
+{
+    if(start == end) {
+        copy[start] = data[start];
+        return 0;
+    }
+
+    int length = (end - start) / 2;
+
+    int left = InversePairsCore(copy, data, start, start + length);
+    int right = InversePairsCore(copy, data, start + length + 1, end);
+
+    // i初始化为前半段最后一个数字的下标
+    int i = start + length;
+    // j初始化为后半段最后一个数字的下标
+    int j = end;
+    int indexCopy = end;
+    int count = 0;
+    while(i >= start && j >= start + length + 1){
+        if(data[i] > data[j]){
+            copy[indexCopy--] = data[i--];
+            count += j - start - length;
+        }
+        else{
+            copy[indexCopy--] = data[j--];
+        }
+    }
+
+    for(; i >= start; --i)
+        copy[indexCopy--] = data[i];
+
+    for(; j >= start + length + 1; --j)
+        copy[indexCopy--] = data[j];
+
+    return left + right + count;
+}
+```
+思路：用归并的办法来做；
+
+### 52 两个链表的第一个公共结点
+题目：输入两个链表，找出它们的第一个公共结点。
+```
+ListNode* FindFirstCommonNode(ListNode *pHead1, ListNode *pHead2)
+{
+    // 得到两个链表的长度
+    unsigned int nLength1 = GetListLength(pHead1);
+    unsigned int nLength2 = GetListLength(pHead2);
+    int nLengthDif = nLength1 - nLength2;
+
+    ListNode* pListHeadLong = pHead1;
+    ListNode* pListHeadShort = pHead2;
+    if(nLength2 > nLength1){
+        pListHeadLong = pHead2;
+        pListHeadShort = pHead1;
+        nLengthDif = nLength2 - nLength1;
+    }
+
+    // 先在长链表上走几步，再同时在两个链表上遍历
+    for(int i = 0; i < nLengthDif; ++i)
+        pListHeadLong = pListHeadLong->m_pNext;
+
+    while((pListHeadLong != nullptr) &&
+        (pListHeadShort != nullptr) &&
+        (pListHeadLong != pListHeadShort)){
+        pListHeadLong = pListHeadLong->m_pNext;
+        pListHeadShort = pListHeadShort->m_pNext;
+    }
+
+    // 得到第一个公共结点
+    ListNode* pFisrtCommonNode = pListHeadLong;
+    return pFisrtCommonNode;
+}
+
+unsigned int GetListLength(ListNode* pHead)
+{
+    unsigned int nLength = 0;
+    ListNode* pNode = pHead;
+    while(pNode != nullptr){
+        ++nLength;
+        pNode = pNode->m_pNext;
+    }
+    return nLength;
+}
+```
+思路：公共祖先，就是从头走到尾，再从另一个头走到尾，然后第二次会走到相同的位置；
 
 
 

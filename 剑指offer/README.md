@@ -1,8 +1,11 @@
 # 剑指offer
 
+## 题目列表
+- 63 股票的最大利润
 ## note：
 - 21题的可扩展解法很有意思，mark
 - 46题、51题值得关注
+- 56题、57.2、59.1、
 ```
 //根据一个数将数组分成左右两部分的函数，左边小于右边
 int Partition(int data[], int length, int start, int end)
@@ -1557,7 +1560,185 @@ void FindPath
 ```
 思路：就有点回溯的思想在里面，挺简单的；
 
-### 35 
+### 35：复杂链表的复制
+题目：请实现函数ComplexListNode* Clone(ComplexListNode* pHead)，复
+制一个复杂链表。在复杂链表中，每个结点除了有一个m_pNext指针指向下一个
+结点外，还有一个m_pSibling 指向链表中的任意结点或者nullptr。
+```
+ComplexListNode* Clone(ComplexListNode* pHead)
+{
+    CloneNodes(pHead);
+    ConnectSiblingNodes(pHead);
+    return ReconnectNodes(pHead);
+}
+void CloneNodes(ComplexListNode* pHead)
+{
+    ComplexListNode* pNode = pHead;
+    while(pNode != nullptr){
+        ComplexListNode* pCloned = new ComplexListNode();
+        pCloned->m_nValue = pNode->m_nValue;
+        pCloned->m_pNext = pNode->m_pNext;
+        pCloned->m_pSibling = nullptr;
+ 
+        pNode->m_pNext = pCloned;
+        pNode = pCloned->m_pNext;
+    }
+}
+void ConnectSiblingNodes(ComplexListNode* pHead)
+{
+    ComplexListNode* pNode = pHead;
+    while(pNode != nullptr){
+        ComplexListNode* pCloned = pNode->m_pNext;
+        if(pNode->m_pSibling != nullptr){
+            pCloned->m_pSibling = pNode->m_pSibling->m_pNext;
+        }
+        pNode = pCloned->m_pNext;
+    }
+}
+ComplexListNode* ReconnectNodes(ComplexListNode* pHead)
+{
+    ComplexListNode* pNode = pHead;
+    ComplexListNode* pClonedHead = nullptr;
+    ComplexListNode* pClonedNode = nullptr;
+ 
+    if(pNode != nullptr){
+        pClonedHead = pClonedNode = pNode->m_pNext;
+        pNode->m_pNext = pClonedNode->m_pNext;
+        pNode = pNode->m_pNext;
+    }
+ 
+    while(pNode != nullptr){
+        pClonedNode->m_pNext = pNode->m_pNext;
+        pClonedNode = pClonedNode->m_pNext;
+ 
+        pNode->m_pNext = pClonedNode->m_pNext;
+        pNode = pNode->m_pNext;
+    }
+    return pClonedHead;
+} 
+```
+思路：用hash map映射原始节点与新对应节点的关系，空间复杂度有点高；方法是在原始链表后面插入新构造的链表，最后偶数位置的链表就组成了新的复制链表；
+
+### 36 二叉搜索树与双向链表
+题目：输入一棵二叉搜索树，将该二叉搜索树转换成一个排序的双向链表。要求不能创建任何新的结点，只能调整树中结点指针的指向。
+```
+BinaryTreeNode* Convert(BinaryTreeNode* pRootOfTree)
+{
+    BinaryTreeNode *pLastNodeInList = nullptr;
+    ConvertNode(pRootOfTree, &pLastNodeInList);
+
+    // pLastNodeInList指向双向链表的尾结点，
+    // 我们需要返回头结点
+    BinaryTreeNode *pHeadOfList = pLastNodeInList;
+    while(pHeadOfList != nullptr && pHeadOfList->m_pLeft != nullptr)
+        pHeadOfList = pHeadOfList->m_pLeft;
+    return pHeadOfList;
+}
+void ConvertNode(BinaryTreeNode* pNode, BinaryTreeNode** pLastNodeInList)
+{
+    if(pNode == nullptr)
+        return;
+
+    BinaryTreeNode *pCurrent = pNode;
+    if (pCurrent->m_pLeft != nullptr)
+        ConvertNode(pCurrent->m_pLeft, pLastNodeInList);
+
+    pCurrent->m_pLeft = *pLastNodeInList; 
+    if(*pLastNodeInList != nullptr)
+        (*pLastNodeInList)->m_pRight = pCurrent;
+
+    *pLastNodeInList = pCurrent;
+
+    if (pCurrent->m_pRight != nullptr)
+        ConvertNode(pCurrent->m_pRight, pLastNodeInList);
+}
+```
+思路：二叉搜索树中序遍历；整一个形参作为当前树的最大节点；
+
+### 37 序列化二叉树
+题目：请实现两个函数，分别用来序列化和反序列化二叉树。
+```
+void Serialize(const BinaryTreeNode* pRoot, ostream& stream)
+{
+    if(pRoot == nullptr){
+        stream << "$,";
+        return;
+    }
+
+    stream << pRoot->m_nValue << ',';
+    Serialize(pRoot->m_pLeft, stream);
+    Serialize(pRoot->m_pRight, stream);
+}
+bool ReadStream(istream& stream, int* number)
+{
+    if(stream.eof())
+        return false;
+
+    char buffer[32];
+    buffer[0] = '\0';
+
+    char ch;
+    stream >> ch;
+    int i = 0;
+    while(!stream.eof() && ch != ','){
+        buffer[i++] = ch;
+        stream >> ch;
+    }
+
+    bool isNumeric = false;
+    if(i > 0 && buffer[0] != '$'){
+        *number = atoi(buffer);
+        isNumeric = true;
+    }
+
+    return isNumeric;
+}
+void Deserialize(BinaryTreeNode** pRoot, istream& stream)
+{
+    int number;
+    if(ReadStream(stream, &number)){
+        *pRoot = new BinaryTreeNode();
+        (*pRoot)->m_nValue = number;
+        (*pRoot)->m_pLeft = nullptr;
+        (*pRoot)->m_pRight = nullptr;
+
+        Deserialize(&((*pRoot)->m_pLeft), stream);
+        Deserialize(&((*pRoot)->m_pRight), stream);
+    }
+}
+```
+思路：用前序遍历来序列化二叉树，节点数值用‘，’隔开，空节点用特殊字符来表示；注意如果是序列化二叉搜索树，就不需要对空节点序列化，这是区别！！！
+
+### 38 字符串的排列
+题目：输入一个字符串，打印出该字符串中字符的所有排列。例如输入字符串abc，则打印出由字符a、b、c所能排列出来的所有字符串abc、acb、bac、bca、cab和cba。
+```
+void Permutation(char* pStr)
+{
+    if(pStr == nullptr)
+        return;
+    Permutation(pStr, pStr);
+}
+void Permutation(char* pStr, char* pBegin)
+{
+    if(*pBegin == '\0'){
+        printf("%s\n", pStr);
+    }
+    else{
+        for(char* pCh = pBegin; *pCh != '\0'; ++ pCh){
+            char temp = *pCh;
+            *pCh = *pBegin;
+            *pBegin = temp;
+
+            Permutation(pStr, pBegin + 1);
+
+            temp = *pCh;
+            *pCh = *pBegin;
+            *pBegin = temp;
+        }
+    }
+}
+```
+思路：这种排列组合的问题就用回溯来做；
 
 ### 39：数组中出现次数超过一半的数字
 题目：数组中有一个数字出现的次数超过数组长度的一半，请找出这个数字。例
@@ -2177,6 +2358,1006 @@ unsigned int GetListLength(ListNode* pHead)
 }
 ```
 思路：公共祖先，就是从头走到尾，再从另一个头走到尾，然后第二次会走到相同的位置；
+
+### 53.1 数字在排序数组中出现的次数
+题目：统计一个数字在排序数组中出现的次数。例如输入排序数组{1, 2, 3, 3,
+3, 3, 4, 5}和数字3，由于3在这个数组中出现了4次，因此输出4。
+```
+int GetNumberOfK(const int* data, int length, int k)
+{
+    int number = 0;
+
+    if(data != nullptr && length > 0){
+        int first = GetFirstK(data, length, k, 0, length - 1);
+        int last = GetLastK(data, length, k, 0, length - 1);
+        
+        if(first > -1 && last > -1)
+            number = last - first + 1;
+    }
+
+    return number;
+}
+// 找到数组中第一个k的下标。如果数组中不存在k，返回-1
+int GetFirstK(const int* data, int length, int k, int start, int end)
+{
+    if(start > end)
+        return -1;
+
+    int middleIndex = (start + end) / 2;
+    int middleData = data[middleIndex];
+
+    if(middleData == k){
+        if((middleIndex > 0 && data[middleIndex - 1] != k) 
+            || middleIndex == 0)
+            return middleIndex;
+        else
+            end  = middleIndex - 1;
+    }
+    else if(middleData > k)
+        end = middleIndex - 1;
+    else
+        start = middleIndex + 1;
+
+    return GetFirstK(data, length, k, start, end);
+}
+// 找到数组中最后一个k的下标。如果数组中不存在k，返回-1
+int GetLastK(const int* data, int length, int k, int start, int end)
+{
+    if(start > end)
+        return -1;
+
+    int middleIndex = (start + end) / 2;
+    int middleData = data[middleIndex];
+
+    if(middleData == k){
+        if((middleIndex < length - 1 && data[middleIndex + 1] != k) 
+            || middleIndex == length - 1)
+            return middleIndex;
+        else
+            start  = middleIndex + 1;
+    }
+    else if(middleData < k)
+        start = middleIndex + 1;
+    else
+        end = middleIndex - 1;
+
+    return GetLastK(data, length, k, start, end);
+}
+```
+思路：递增数组，求指定数出现的次数：就两次循环，第一次找最左边的数，第二次找最右边的数，然后求差；
+
+### 53.2 0到n-1中缺失的数字
+题目：一个长度为n-1的递增排序数组中的所有数字都是唯一的，并且每个数字
+都在范围0到n-1之内。在范围0到n-1的n个数字中有且只有一个数字不在该数组
+中，请找出这个数字。
+```
+int GetMissingNumber(const int* numbers, int length)
+{
+    if(numbers == nullptr || length <= 0)
+        return -1;
+
+    int left = 0;
+    int right = length - 1;
+    while(left <= right){
+        int middle = (right + left) >> 1;
+        if(numbers[middle] != middle){
+            if(middle == 0 || numbers[middle - 1] == middle - 1)
+                return middle;
+            right = middle - 1;
+        }
+        else
+            left = middle + 1;
+    }
+
+    if(left == length)
+        return length;
+
+    // 无效的输入，比如数组不是按要求排序的，
+    // 或者有数字不在0到n-1范围之内
+    return -1;
+}
+```
+思路：用二分查找，如果数和下标一样，就查找右边，否则查找左边；
+
+### 53.3 数组中数值和下标相等的元素
+题目：假设一个单调递增的数组里的每个元素都是整数并且是唯一的。请编程实
+现一个函数找出数组中任意一个数值等于其下标的元素。例如，在数组{-3, -1, 1, 3, 5}中，数字3和它的下标相等。
+```
+int GetNumberSameAsIndex(const int* numbers, int length)
+{
+    if(numbers == nullptr || length <= 0)
+        return -1;
+
+    int left = 0;
+    int right = length - 1;
+    while(left <= right){
+        int middle = left + ((right - left) >> 1);
+        if(numbers[middle] == middle)
+            return middle;
+
+        if(numbers[middle] > middle)
+            right = middle - 1;
+        else
+            left = middle + 1;
+    }
+    return -1;
+}
+```
+思路：就类似二分查找，如果m大于下标，那么右边都大于下标；同理如果m小于下标，那么左边的数都小于下标；所以可以用二分；
+
+### 54 二叉搜索树的第k个结点
+题目：给定一棵二叉搜索树，请找出其中的第k大的结点。
+```
+const BinaryTreeNode* KthNode(const BinaryTreeNode* pRoot, unsigned int k)
+{
+    if(pRoot == nullptr || k == 0)
+        return nullptr;
+
+    return KthNodeCore(pRoot, k);
+}
+const BinaryTreeNode* KthNodeCore(const BinaryTreeNode* pRoot, unsigned int& k)
+{
+    const BinaryTreeNode* target = nullptr;
+
+    if(pRoot->m_pLeft != nullptr)
+        target = KthNodeCore(pRoot->m_pLeft, k);
+
+    if(target == nullptr){
+        if(k == 1)
+            target = pRoot;
+
+        k--;
+    }
+
+    if(target == nullptr && pRoot->m_pRight != nullptr)
+        target = KthNodeCore(pRoot->m_pRight, k);
+
+    return target;
+}
+```
+思路：就二叉搜索树的中序遍历；
+
+### 55.1 二叉树的深度
+题目：输入一棵二叉树的根结点，求该树的深度。从根结点到叶结点依次经过的
+结点（含根、叶结点）形成树的一条路径，最长路径的长度为树的深度。
+```
+int TreeDepth(const BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return 0;
+
+    int nLeft = TreeDepth(pRoot->m_pLeft);
+    int nRight = TreeDepth(pRoot->m_pRight);
+
+    return (nLeft > nRight) ? (nLeft + 1) : (nRight + 1);
+}
+```
+思路：就常规的求树的深度；
+
+### 55.2 平衡二叉树
+题目：输入一棵二叉树的根结点，判断该树是不是平衡二叉树。如果某二叉树中
+任意结点的左右子树的深度相差不超过1，那么它就是一棵平衡二叉树。
+```
+// ====================方法1====================
+int TreeDepth(const BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return 0;
+
+    int nLeft = TreeDepth(pRoot->m_pLeft);
+    int nRight = TreeDepth(pRoot->m_pRight);
+
+    return (nLeft > nRight) ? (nLeft + 1) : (nRight + 1);
+}
+
+bool IsBalanced_Solution1(const BinaryTreeNode* pRoot)
+{
+    if(pRoot == nullptr)
+        return true;
+
+    int left = TreeDepth(pRoot->m_pLeft);
+    int right = TreeDepth(pRoot->m_pRight);
+    int diff = left - right;
+    if(diff > 1 || diff < -1)
+        return false;
+
+    return IsBalanced_Solution1(pRoot->m_pLeft) 
+        && IsBalanced_Solution1(pRoot->m_pRight);
+}
+
+// ====================方法2====================
+bool IsBalanced(const BinaryTreeNode* pRoot, int* pDepth);
+
+bool IsBalanced_Solution2(const BinaryTreeNode* pRoot)
+{
+    int depth = 0;
+    return IsBalanced(pRoot, &depth);
+}
+
+bool IsBalanced(const BinaryTreeNode* pRoot, int* pDepth)
+{
+    if(pRoot == nullptr){
+        *pDepth = 0;
+        return true;
+    }
+
+    int left, right;
+    if(IsBalanced(pRoot->m_pLeft, &left) 
+        && IsBalanced(pRoot->m_pRight, &right)){
+        int diff = left - right;
+        if(diff <= 1 && diff >= -1){
+            *pDepth = 1 + (left > right ? left : right);
+            return true;
+        }
+    }
+
+    return false;
+}
+```
+思路：就是第一问的升级版；
+
+### 56.1 数组中只出现一次的两个数字
+题目：一个整型数组里除了两个数字之外，其他的数字都出现了两次。请写程序
+找出这两个只出现一次的数字。要求时间复杂度是O(n)，空间复杂度是O(1)。
+```
+void FindNumsAppearOnce(int data[], int length, int* num1, int* num2)
+{
+    if(data == nullptr || length < 2)
+        return;
+
+    int resultExclusiveOR = 0;
+    for(int i = 0; i < length; ++i)
+        resultExclusiveOR ^= data[i];
+
+    unsigned int indexOf1 = FindFirstBitIs1(resultExclusiveOR);
+
+    *num1 = *num2 = 0;
+    for(int j = 0; j < length; ++j){
+        if(IsBit1(data[j], indexOf1))
+            *num1 ^= data[j];
+        else
+            *num2 ^= data[j];
+    }
+}
+// 找到num从右边数起第一个是1的位
+unsigned int FindFirstBitIs1(int num)
+{
+    int indexBit = 0;
+    while(((num & 1) == 0) && (indexBit < 8 * sizeof(int))){
+        num = num >> 1;
+        ++indexBit;
+    }
+    return indexBit;
+}
+// 判断数字num的第indexBit位是不是1
+bool IsBit1(int num, unsigned int indexBit)
+{
+    num = num >> indexBit;
+    return (num & 1);
+}
+```
+思路：面试很容易出现的问题，异或分组；
+
+### 56.2 数组中唯一只出现一次的数字
+题目：在一个数组中除了一个数字只出现一次之外，其他数字都出现了三次。请找出那个吃出现一次的数字。
+```
+int FindNumberAppearingOnce(int numbers[], int length)
+{
+    if(numbers == nullptr || length <= 0)
+        throw new std::exception("Invalid input.");
+
+    int bitSum[32] = {0};
+    for(int i = 0; i < length; ++i){
+        int bitMask = 1;
+        for(int j = 31; j >= 0; --j){
+            int bit = numbers[i] & bitMask;
+            if(bit != 0)
+                bitSum[j] += 1;
+
+            bitMask = bitMask << 1;
+        }
+    }
+
+    int result = 0;
+    for(int i = 0; i < 32; ++i){
+        result = result << 1;
+        result += bitSum[i] % 3;
+    }
+    return result;
+}
+```
+思路：用位运算，统计各个位出现1的次数，如果能被3整除，说明单一的数这位是0；如果不能被3整除，说明这一位不是0；
+
+### 57.1 和为s的两个数字
+题目：输入一个递增排序的数组和一个数字s，在数组中查找两个数，使得它们的和正好是s。如果有多对数字的和等于s，输出任意一对即可。
+```
+bool FindNumbersWithSum(int data[], int length, int sum, 
+                        int* num1, int* num2)
+{
+    bool found = false;
+    if(length < 1 || num1 == nullptr || num2 == nullptr)
+        return found;
+
+    int ahead = length - 1;
+    int behind = 0;
+
+    while(ahead > behind){
+        long long curSum = data[ahead] + data[behind];
+
+        if(curSum == sum){
+            *num1 = data[behind];
+            *num2 = data[ahead];
+            found = true;
+            break;
+        }
+        else if(curSum > sum)
+            ahead --;
+        else
+            behind ++;
+    }
+    return found;
+}
+```
+思路：排好序的数组查找，就用双指针来查找；
+
+### 57.2 为s的连续正数序列
+题目：输入一个正数s，打印出所有和为s的连续正数序列（至少含有两个数）。
+例如输入15，由于1+2+3+4+5=4+5+6=7+8=15，所以结果打印出3个连续序列1～5、4～6和7～8。
+```
+void FindContinuousSequence(int sum)
+{
+    if(sum < 3)
+        return;
+
+    int small = 1; 
+    int big = 2;
+    int middle = (1 + sum) / 2;
+    int curSum = small + big;
+
+    while(small < middle){
+        if(curSum == sum)
+            PrintContinuousSequence(small, big);
+
+        while(curSum > sum && small < middle){
+            curSum -= small;
+            small ++;
+
+            if(curSum == sum)
+                PrintContinuousSequence(small, big);
+        }
+
+        big ++;
+        curSum += big;
+    }
+}
+void PrintContinuousSequence(int small, int big)
+{
+    for(int i = small; i <= big; ++ i)
+        printf("%d ", i);
+
+    printf("\n");
+}
+//等差数列求和
+int consecutiveNumbersSum(int N) {
+	int ans = 0;
+	for (int m = 1; ; m++) {
+		int mx = N - m * (m-1) / 2;
+		if (mx <= 0)
+			break;
+		if (mx % m == 0)
+			ans++;
+	}
+	return ans;
+}
+```
+思路：也是双指针，维护一个滑窗，求和；其实就是等差数列求和：妙啊！！
+
+### 58.1 翻转单词顺序
+题目：输入一个英文句子，翻转句子中单词的顺序，但单词内字符的顺序不变。
+为简单起见，标点符号和普通字母一样处理。例如输入字符串"I am a student. "，则输出"student. a am I"。
+```
+char* ReverseSentence(char *pData)
+{
+    if(pData == nullptr)
+        return nullptr;
+
+    char *pBegin = pData;
+
+    char *pEnd = pData;
+    while(*pEnd != '\0')
+        pEnd ++;
+    pEnd--;
+
+    // 翻转整个句子
+    Reverse(pBegin, pEnd);
+
+    // 翻转句子中的每个单词
+    pBegin = pEnd = pData;
+    while(*pBegin != '\0'){
+        if(*pBegin == ' '){
+            pBegin ++;
+            pEnd ++;
+        }
+        else if(*pEnd == ' ' || *pEnd == '\0'){
+            Reverse(pBegin, --pEnd);
+            pBegin = ++pEnd;
+        }
+        else
+            pEnd ++;
+    }
+    return pData;
+}
+```
+思路：先整个翻转，然后再对每个单词进行一次翻转；
+
+### 58.2 左旋转字符串
+题目：字符串的左旋转操作是把字符串前面的若干个字符转移到字符串的尾部。
+请定义一个函数实现字符串左旋转操作的功能。比如输入字符串"abcdefg"和数字2，该函数将返回左旋转2位得到的结果"cdefgab"。
+```
+char* LeftRotateString(char* pStr, int n)
+{
+    if(pStr != nullptr){
+        int nLength = static_cast<int>(strlen(pStr));
+        if(nLength > 0 && n > 0 && n < nLength){
+            char* pFirstStart = pStr;
+            char* pFirstEnd = pStr + n - 1;
+            char* pSecondStart = pStr + n;
+            char* pSecondEnd = pStr + nLength - 1;
+
+            // 翻转字符串的前面n个字符
+            Reverse(pFirstStart, pFirstEnd);
+            // 翻转字符串的后面部分
+            Reverse(pSecondStart, pSecondEnd);
+            // 翻转整个字符串
+            Reverse(pFirstStart, pSecondEnd);
+        }
+    }
+    return pStr;
+}
+//还有一个问题是判断b字符串是否为a旋转后的结果；
+return A.size() == B.size() && (A + A).find(B) != string::npos;
+```
+思路：这个题很妙啊，先把前k个 和后面的分别翻转 然后再整个翻转；
+
+
+### 59.1 滑动窗口的最大值
+题目：给定一个数组和滑动窗口的大小，请找出所有滑动窗口里的最大值。例如，
+如果输入数组{2, 3, 4, 2, 6, 2, 5, 1}及滑动窗口的大小3，那么一共存在6个滑动窗口，它们的最大值分别为{4, 4, 6, 6, 6, 5}，
+```
+vector<int> maxInWindows(const vector<int>& num, unsigned int size)
+{
+    vector<int> maxInWindows;
+    if(num.size() >= size && size >= 1){
+        deque<int> index;
+
+        for(unsigned int i = 0; i < size; ++i){
+            while(!index.empty() && num[i] >= num[index.back()])
+                index.pop_back();
+
+            index.push_back(i);
+        }
+
+        for(unsigned int i = size; i < num.size(); ++i){
+            maxInWindows.push_back(num[index.front()]);
+
+            while(!index.empty() && num[i] >= num[index.back()])
+                index.pop_back();
+            if(!index.empty() && index.front() <= (int) (i - size))
+                index.pop_front();
+
+            index.push_back(i);
+        }
+        maxInWindows.push_back(num[index.front()]);
+    }
+
+    return maxInWindows;
+}
+```
+思路：
+
+### 59.2 队列的最大值
+题目：给定一个数组和滑动窗口的大小，请找出所有滑动窗口里的最大值。例如，
+如果输入数组{2, 3, 4, 2, 6, 2, 5, 1}及滑动窗口的大小3，那么一共存在6个
+滑动窗口，它们的最大值分别为{4, 4, 6, 6, 6, 5}，
+```
+template<typename T> class QueueWithMax
+{
+public:
+    QueueWithMax() : currentIndex(0)
+    {
+    }
+
+    void push_back(T number){
+        while(!maximums.empty() && number >= maximums.back().number)
+            maximums.pop_back();
+
+        InternalData internalData = { number, currentIndex };
+        data.push_back(internalData);
+        maximums.push_back(internalData);
+
+        ++currentIndex;
+    }
+
+    void pop_front(){
+        if(maximums.empty())
+            throw new exception("queue is empty");
+
+        if(maximums.front().index == data.front().index)
+            maximums.pop_front();
+
+        data.pop_front();
+    }
+
+    T max() const{
+        if(maximums.empty())
+            throw new exception("queue is empty");
+
+        return maximums.front().number;
+    }
+
+private:
+    struct InternalData{
+        T number;
+        int index;
+    };
+
+    deque<InternalData> data;
+    deque<InternalData> maximums;
+    int currentIndex;
+};
+```
+
+### 60 n个骰子的点数
+题目：把n个骰子扔在地上，所有骰子朝上一面的点数之和为s。输入n，打印出s的所有可能的值出现的概率。
+```
+// ====================方法一====================
+void Probability(int number, int* pProbabilities);
+void Probability(int original, int current, int sum, int* pProbabilities);
+
+void PrintProbability_Solution1(int number)
+{
+    if(number < 1)
+        return;
+ 
+    int maxSum = number * g_maxValue;
+    int* pProbabilities = new int[maxSum - number + 1];
+    for(int i = number; i <= maxSum; ++i)
+        pProbabilities[i - number] = 0;
+ 
+    Probability(number, pProbabilities);
+ 
+    int total = pow((double)g_maxValue, number);
+    for(int i = number; i <= maxSum; ++i){
+        double ratio = (double)pProbabilities[i - number] / total;
+        printf("%d: %e\n", i, ratio);
+    }
+ 
+    delete[] pProbabilities;
+}
+void Probability(int number, int* pProbabilities)
+{
+    for(int i = 1; i <= g_maxValue; ++i)
+        Probability(number, number, i, pProbabilities);
+}
+void Probability(int original, int current, int sum, 
+                 int* pProbabilities)
+{
+    if(current == 1){
+        pProbabilities[sum - original]++;
+    }
+    else{
+        for(int i = 1; i <= g_maxValue; ++i){
+            Probability(original, current - 1, i + sum, pProbabilities);
+        }
+    }
+} 
+// ====================方法二====================
+void PrintProbability_Solution2(int number)
+{
+    if(number < 1)
+        return;
+
+    int* pProbabilities[2];
+    pProbabilities[0] = new int[g_maxValue * number + 1];
+    pProbabilities[1] = new int[g_maxValue * number + 1];
+    for(int i = 0; i < g_maxValue * number + 1; ++i){
+        pProbabilities[0][i] = 0;
+        pProbabilities[1][i] = 0;
+    }
+ 
+    int flag = 0;
+    for (int i = 1; i <= g_maxValue; ++i) 
+        pProbabilities[flag][i] = 1; 
+    
+    for (int k = 2; k <= number; ++k) {
+        for(int i = 0; i < k; ++i)
+            pProbabilities[1 - flag][i] = 0;
+
+        for (int i = k; i <= g_maxValue * k; ++i) {
+            pProbabilities[1 - flag][i] = 0;
+            for(int j = 1; j <= i && j <= g_maxValue; ++j) 
+                pProbabilities[1 - flag][i] += pProbabilities[flag][i - j];
+        }
+ 
+        flag = 1 - flag;
+    }
+
+    double total = pow((double)g_maxValue, number);
+    for(int i = number; i <= g_maxValue * number; ++i){
+        double ratio = (double)pProbabilities[flag][i] / total;
+        printf("%d: %e\n", i, ratio);
+    }
+ 
+    delete[] pProbabilities[0];
+    delete[] pProbabilities[1];
+}
+```
+思路：动态规划的思想，第n项等于另一个第n-1、n-2、n-3、n-4、n-5、n-6的和
+
+### 61 扑克牌的顺子
+题目：从扑克牌中随机抽5张牌，判断是不是一个顺子，即这5张牌是不是连续的。
+2～10为数字本身，A为1，J为11，Q为12，K为13，而大、小王可以看成任意数字。
+```
+bool IsContinuous(int* numbers, int length)
+{
+    if(numbers == nullptr || length < 1)
+        return false;
+
+    qsort(numbers, length, sizeof(int), Compare);
+
+    int numberOfZero = 0;
+    int numberOfGap = 0;
+
+    // 统计数组中0的个数
+    for(int i = 0; i < length && numbers[i] == 0; ++i)
+        ++numberOfZero;
+
+    // 统计数组中的间隔数目
+    int small = numberOfZero;
+    int big = small + 1;
+    while(big < length){
+        // 两个数相等，有对子，不可能是顺子
+        if(numbers[small] == numbers[big])
+            return false;
+
+        numberOfGap += numbers[big] - numbers[small] - 1;
+        small = big;
+        ++big;
+    }
+    return (numberOfGap > numberOfZero) ? false : true;
+}
+int Compare(const void *arg1, const void *arg2)
+{
+    return *(int*) arg1 - *(int*) arg2;
+}
+```
+思路：先排序，然后计算0的个数，计算gap的个数，如果gap的个数小于0的个数，说明可以满足顺子；
+
+### 62 圆圈中最后剩下的数字
+题目：0, 1, …, n-1这n个数字排成一个圆圈，从数字0开始每次从这个圆圈里
+删除第m个数字。求出这个圆圈里剩下的最后一个数字。
+```
+// ====================方法1====================
+int LastRemaining_Solution1(unsigned int n, unsigned int m)
+{
+    if(n < 1 || m < 1)
+        return -1;
+
+    unsigned int i = 0;
+
+    list<int> numbers;
+    for(i = 0; i < n; ++ i)
+        numbers.push_back(i);
+
+    list<int>::iterator current = numbers.begin();
+    while(numbers.size() > 1){
+        for(int i = 1; i < m; ++ i){
+            current ++;
+            if(current == numbers.end())
+                current = numbers.begin();
+        }
+
+        list<int>::iterator next = ++ current;
+        if(next == numbers.end())
+            next = numbers.begin();
+
+        -- current;
+        numbers.erase(current);
+        current = next;
+    }
+    return *(current);
+}
+// ====================方法2====================
+int LastRemaining_Solution2(unsigned int n, unsigned int m)
+{
+    if(n < 1 || m < 1)
+        return -1;
+
+    int last = 0;
+    for (int i = 2; i <= n; i ++) 
+        last = (last + m) % i;
+
+    return last;
+}
+```
+思路：方法一就是模拟约瑟夫环问题，时间复杂度O(mn)；第二种数学的方法很牛逼啊；
+
+### 63 股票的最大利润
+题目：假设把某股票的价格按照时间先后顺序存储在数组中，请问买卖交易该股
+票可能获得的利润是多少？例如一只股票在某些时间节点的价格为{9, 11, 8, 5,
+7, 12, 16, 14}。如果我们能在价格为5的时候买入并在价格为16时卖出，则能收获最大的利润11。
+```
+int MaxDiff(const int* numbers, unsigned length)
+{
+    if(numbers == nullptr && length < 2)
+        return 0;
+
+    int min = numbers[0];
+    int maxDiff = numbers[1] - min;
+
+    for(int i = 2; i < length; ++i){
+        if(numbers[i - 1] < min)
+            min = numbers[i - 1];
+
+        int currentDiff = numbers[i] - min;
+        if(currentDiff > maxDiff)
+            maxDiff = currentDiff;
+    }
+    return maxDiff;
+}
+```
+思路：不断更新最小值与最大的差；
+
+### 64 求1+2+…+n
+题目：求1+2+…+n，要求不能使用乘除法、for、while、if、else、switch、case
+等关键字及条件判断语句（A?B:C）。
+```
+// ====================方法一====================
+class Temp
+{
+public:
+    Temp() { ++ N; Sum += N; }
+
+    static void Reset() { N = 0; Sum = 0; }
+    static unsigned int GetSum() { return Sum; }
+
+private:
+    static unsigned int N;
+    static unsigned int Sum;
+};
+
+unsigned int Temp::N = 0;
+unsigned int Temp::Sum = 0;
+
+unsigned int Sum_Solution1(unsigned int n)
+{
+    Temp::Reset();
+
+    Temp *a = new Temp[n];
+    delete []a;
+    a = NULL;
+
+    return Temp::GetSum();
+}
+
+// ====================方法二====================
+class A;
+A* Array[2];
+
+class A
+{
+public:
+    virtual unsigned int Sum (unsigned int n) 
+    { 
+        return 0; 
+    }
+};
+
+class B: public A
+{
+public:
+    virtual unsigned int Sum (unsigned int n) 
+    { 
+        return Array[!!n]->Sum(n-1) + n; 
+    }
+};
+
+int Sum_Solution2(int n)
+{
+    A a;
+    B b;
+    Array[0] = &a;
+    Array[1] = &b;
+
+    int value = Array[1]->Sum(n);
+
+    return value;
+}
+
+// ====================方法三====================
+typedef unsigned int (*fun)(unsigned int);
+
+unsigned int Solution3_Teminator(unsigned int n) 
+{
+    return 0;
+}
+
+unsigned int Sum_Solution3(unsigned int n)
+{
+    static fun f[2] = {Solution3_Teminator, Sum_Solution3}; 
+    return n + f[!!n](n - 1);
+}
+
+// ====================方法四====================
+template <unsigned int n> struct Sum_Solution4
+{
+    enum Value { N = Sum_Solution4<n - 1>::N + n};
+};
+
+template <> struct Sum_Solution4<1>
+{
+    enum Value { N = 1};
+};
+
+template <> struct Sum_Solution4<0>
+{
+    enum Value { N = 0};
+};
+```
+
+### 65 不用加减乘除做加法
+题目：写一个函数，求两个整数之和，要求在函数体内不得使用＋、－、×、÷四则运算符号。
+```
+int Add(int num1, int num2)
+{
+    int sum, carry;
+    do{
+        sum = num1 ^ num2;
+        carry = (num1 & num2) << 1;
+
+        num1 = sum;
+        num2 = carry;
+    }
+    while(num2 != 0);
+
+    return num1;
+}
+```
+
+### 66 构建乘积数组
+题目：给定一个数组A[0, 1, …, n-1]，请构建一个数组B[0, 1, …, n-1]，其
+中B中的元素B[i] =A[0]×A[1]×… ×A[i-1]×A[i+1]×…×A[n-1]。不能使用除法。
+```
+void BuildProductionArray(const vector<double>& input, vector<double>& output)
+{
+    int length1 = input.size();
+    int length2 = output.size();
+
+    if(length1 == length2 && length2 > 1){
+        output[0] = 1;
+        for(int i = 1; i < length1; ++i){
+            output[i] = output[i - 1] * input[i - 1];
+        }
+
+        double temp = 1;
+        for(int i = length1 - 2; i >= 0; --i){
+            temp *= input[i + 1];
+            output[i] *= temp;
+        }
+    }
+}
+```
+
+### 67 把字符串转换成整数
+题目：请你写一个函数StrToInt，实现把字符串转换成整数这个功能。当然，不
+能使用atoi或者其他类似的库函数。
+```
+int StrToInt(const char* str)
+{
+    g_nStatus = kInvalid;
+    long long num = 0;
+
+    if(str != nullptr && *str != '\0') {
+        bool minus = false;
+        if(*str == '+')
+            str ++;
+        else if(*str == '-') {
+            str ++;
+            minus = true;
+        }
+
+        if(*str != '\0') 
+            num = StrToIntCore(str, minus);
+    }
+
+    return (int)num;
+}
+long long StrToIntCore(const char* digit, bool minus)
+{
+    long long num = 0;
+
+    while(*digit != '\0') {
+        if(*digit >= '0' && *digit <= '9') {
+            int flag = minus ? -1 : 1;
+            num = num * 10 + flag * (*digit - '0');
+
+            if((!minus && num > 0x7FFFFFFF) 
+                || (minus && num < (signed int)0x80000000)){
+                num = 0;
+                break;
+            }
+
+            digit++;
+        }
+        else {
+            num = 0;
+            break;
+        }
+    }
+
+    if(*digit == '\0') 
+        g_nStatus = kValid;
+
+    return num;
+}
+```
+
+### 68 树中两个结点的最低公共祖先
+题目：输入两个树结点，求它们的最低公共祖先。
+```
+bool GetNodePath(const TreeNode* pRoot, const TreeNode* pNode, list<const TreeNode*>& path)
+{
+    if(pRoot == pNode)
+        return true;
+ 
+    path.push_back(pRoot);
+ 
+    bool found = false;
+
+    vector<TreeNode*>::const_iterator i = pRoot->m_vChildren.begin();
+    while(!found && i < pRoot->m_vChildren.end()){
+        found = GetNodePath(*i, pNode, path);
+        ++i;
+    }
+ 
+    if(!found)
+        path.pop_back();
+ 
+    return found;
+}
+const TreeNode* GetLastCommonNode
+(
+    const list<const TreeNode*>& path1, 
+    const list<const TreeNode*>& path2
+){
+    list<const TreeNode*>::const_iterator iterator1 = path1.begin();
+    list<const TreeNode*>::const_iterator iterator2 = path2.begin();
+    
+    const TreeNode* pLast = nullptr;
+ 
+    while(iterator1 != path1.end() && iterator2 != path2.end()){
+        if(*iterator1 == *iterator2)
+            pLast = *iterator1;
+ 
+        iterator1++;
+        iterator2++;
+    }
+    return pLast;
+}
+const TreeNode* GetLastCommonParent(const TreeNode* pRoot, const TreeNode* pNode1, const TreeNode* pNode2)
+{
+    if(pRoot == nullptr || pNode1 == nullptr || pNode2 == nullptr)
+        return nullptr;
+ 
+    list<const TreeNode*> path1;
+    GetNodePath(pRoot, pNode1, path1);
+ 
+    list<const TreeNode*> path2;
+    GetNodePath(pRoot, pNode2, path2);
+ 
+    return GetLastCommonNode(path1, path2);
+}
+```
 
 
 

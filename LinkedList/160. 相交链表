@@ -1,0 +1,11 @@
+ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+    ListNode * pa = headA;
+    ListNode * pb = headB;
+    while(pa != pb){
+        if(pa!=NULL) pa=pa->next;
+        else pa=headB;
+        if(pb!=NULL) pb=pb->next;
+        else pb=headA;
+    } //如果没有相同节点 就会在末尾相遇 这一点挺妙的
+    return pa;
+}
